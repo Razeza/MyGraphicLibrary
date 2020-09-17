@@ -6,7 +6,7 @@
 #define DED_SORTS_H
 
 
-template<typename TypeName, typename Functor>
+template<typename TypeName, typename Functor = std::less<TypeName>>
 void qsort (TypeName* pointer, int first, int last, Functor cmp_func) {
 
     assert (first >= 0);
@@ -43,7 +43,7 @@ void qsort (TypeName* pointer, int first, int last, Functor cmp_func) {
     }
 }
 
-template<typename TypeName, typename Functor>
+template<typename TypeName, typename Functor = std::less<TypeName>>
 void bubble_sort (TypeName* pointer, int first, int last, Functor cmp_func)
 {
     assert (first >= 0);
