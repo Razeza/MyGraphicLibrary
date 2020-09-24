@@ -38,7 +38,6 @@ private:
     Arrow              arrows[2];
     std::size_t        paragraph;
     sf::Text           text[2];
-    sf::Font           cur_font;
 
 protected:
 
@@ -47,8 +46,8 @@ protected:
 public:
 
     Graphic                              (std::size_t x, std::size_t y, std::size_t paragraph, const std::string& init_x, const std::string& init_y);
-    void setPosition                     (std::size_t x, std::size_t y,sf::Vector2f text_position[2]);
-    inline void set_text                 (const std::string& font, const sf::Color& color, std::size_t character_size);
+    void setPosition                     (std::size_t x, std::size_t y, const sf::Vector2f text_position[2]);
+    inline void set_text                 (const sf::Font& font, const sf::Color& color, std::size_t character_size);
     inline const sf::Vector2f& getOrigin () const;
 };
 

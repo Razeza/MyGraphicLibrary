@@ -59,6 +59,49 @@ void bubble_sort (TypeName* pointer, int first, int last, Functor cmp_func)
     }
 }
 
+template<typename TypeName, typename Functor = std::less<TypeName>>
+void heapify(TypeName* pointer, int last, Functor cmp_func, int i) 
+{ 
+    int largest = i; // Initialize largest as root 
+    int l = 2*i + 1; // left = 2*i + 1 
+    int r = 2*i + 2; // right = 2*i + 2 
+  
+    // If left child is larger than root 
+    if (l < last && cmp_func (pointer[l], pointer[largest])) 
+        largest = l; 
+  
+    // If right child is larger than largest so far 
+    if (r < last && cmp_func (pointer[r], pointer[largest])) 
+        largest = r; 
+  
+    // If largest is not root 
+    if (largest != i) 
+    { 
+        std::swap (pointer[i], pointer[largest]); 
+  
+        // Recursively heapify the affected sub-tree 
+        heapify (pointer, last, cmp_func, largest); 
+    } 
+} 
+  
+template<typename TypeName, typename Functor = std::less<TypeName>>
+void heapSort (TypeName* pointer, int first, int last, Functor cmp_func) 
+{ 
+    // Build heap (rearrange array) 
+    for (int i = last / 2 - 1; i >= 0; i--) 
+        heapify<TypeName, Functor> (pointer, last, cmp_func, i); 
+  
+    // One by one extract an element from heap 
+    for (int i = last - 1; i > 0; i--) 
+    { 
+        // Move current root to end 
+        std::swap (pointer[0], pointer[i]); 
+  
+        // call max heapify on the reduced heap 
+        heapify<TypeName, Functor> (pointer, i, cmp_func, 0); 
+    } 
+}
+
 
 
 #endif //DED_SORTS_H

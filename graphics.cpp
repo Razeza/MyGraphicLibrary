@@ -1,4 +1,4 @@
-#include </home/razeza/Рабочий стол/sort/graphics.hpp>
+#include "graphics.hpp"
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,15 +63,10 @@ void Graphic::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     target.draw (text[1],   states);
 }
 
-inline void Graphic::set_text (const std::string& font, const sf::Color& color, std::size_t character_size) {
+inline void Graphic::set_text (const sf::Font& font, const sf::Color& color, std::size_t character_size) {
     
-    if (!cur_font.loadFromFile (font)) {
-        exit (FontLoadFailed);
-    }
-
-
     for (auto& init_text : text) {
-        init_text.setFont (cur_font);
+        init_text.setFont (font);
         init_text.setFillColor (color);
         init_text.setCharacterSize (character_size);
     }
@@ -101,7 +96,7 @@ Graphic::Graphic (std::size_t x, std::size_t y, std::size_t paragraph, const std
     }   
 }
 
-void Graphic::setPosition (std::size_t x, std::size_t y, sf::Vector2f text_position[2]) {
+void Graphic::setPosition (std::size_t x, std::size_t y, const sf::Vector2f text_position[2]) {
     rectangle.setPosition (x, y);
         
     int i = 0;
