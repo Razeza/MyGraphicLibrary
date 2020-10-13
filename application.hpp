@@ -52,6 +52,18 @@ using namespace Constants;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class Graphic_Functor   ////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct Graphic_Functor {
+    Application* app;
+    int j;             // number of sort
+    void operator () (); 
+
+    Graphic_Functor () = default;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////   Declaration of Class Helper   ////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,11 +77,11 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     struct init {
-        sort_function_type*      sort_functions [quantity_of_sorts];
-        std::string              functions_names[quantity_of_sorts];
-        Research_graphic         sort_graphic   [quantity_of_sorts];
-        Button_with_text         buttons        [quantity_of_sorts];
-        bool                     graph_to_draw  [quantity_of_sorts]; 
+        sort_function_type*                    sort_functions [quantity_of_sorts];
+        std::string                            functions_names[quantity_of_sorts];
+        Research_graphic                       sort_graphic   [quantity_of_sorts];
+        Button_with_text<Graphic_Functor>      buttons        [quantity_of_sorts];
+        bool                                   graph_to_draw  [quantity_of_sorts]; 
     };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,21 +106,30 @@ private:
 ///////////////////////////////////////////   Declaration of Class Application   ////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 class Application: public sf::Drawable {
 private:
+
     
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
+
 
     sf::RenderWindow window;    
     Sprite           back;
     sf::Font         font;
     sf::Texture      button_texture;
     Graphic          sort_graphic[2];
-    Button_with_text exit_button;
     Helper::init     data[quantity_of_sorts];
     Helper           sort_info;
 
+    Button_with_text<exit_functor> exit_button;
+    Window* buttons[quantity_of_sorts + 1];
+
 public:
+
+
+
+    friend class Functor;
 
     Application ();
 

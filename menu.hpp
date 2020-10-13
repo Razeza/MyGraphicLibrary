@@ -44,14 +44,11 @@ public:
 };
 
 
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////   Declaration of Class Button   ////////////////////////////////////////////
+////////////////////////////////////////////   Declaration of Class Window   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Button: public sf::Drawable
-{
+class Window: public sf::Drawable {
 protected:
 
     virtual void draw (sf::RenderTarget& target, sf::RenderStates states) const;
@@ -60,15 +57,41 @@ protected:
 
     std::size_t width;
     std::size_t height;
+
+public:
+
+    Window () = default;
+    Window (sf::Texture* texture,  size_t x_size, size_t y_size);
+    Window (const char*  fileName, size_t x_size, size_t y_size);
+
+    virtual bool is_window (std::size_t mouse_x, std::size_t mouse_y) const;
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////   Declaration of Class Button   ////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename Functor>
+class Button: public Window
+{
+protected:
+
+    Functor action;
+
+    virtual void draw (sf::RenderTarget& target, sf::RenderStates states) const;
+
     std::size_t x;
     std::size_t y;
 
 public:
 
+    void clicked ();  // not realised
+
     Button         () = default;
     Button         (sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu = 0, size_t y_lu = 0);
     Button         (const char* fileName, size_t x_size, size_t y_size, size_t x_lu = 0, size_t y_lu = 0);
-    bool is_button (std::size_t mouse_x, std::size_t mouse_y) const;
+    
+    virtual bool is_window (std::size_t mouse_x, std::size_t mouse_y) const;
 };
 
 
@@ -78,7 +101,8 @@ public:
 //////////////////////////////////   Declaration of Class Button_with_text   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Button_with_text: public Button  {
+template<typename Functor>
+class Button_with_text: public Button<Functor>  {
 private:
 
     sf::Text   text;
@@ -94,6 +118,7 @@ public:
     Button_with_text                (const char* fileName, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, 
                                      const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size);
     void set_button                 (const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size = 0);
+    virtual bool is_window          (std::size_t mouse_x, std::size_t mouse_y) const;
 };
 
 
