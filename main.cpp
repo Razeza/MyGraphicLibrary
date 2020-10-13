@@ -49,13 +49,7 @@ void App ()
                 
                 DEBUG (std::cout << mouse_coordinates.x << " " <<  mouse_coordinates.y << "\n";)
  
-                switch (app.button_pressed (mouse_coordinates.x, mouse_coordinates.y)) {
-                    case CLOSE:
-                    {
-                        app.close ();
-                    }
-
-                }
+                app.button_pressed (mouse_coordinates.x, mouse_coordinates.y);
             }
         }
 

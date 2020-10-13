@@ -13,7 +13,17 @@ enum Erroes {
     MusicLoadFailed = -5,
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////   Declaration of Class exit_functor   ////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+struct exit_functor {
+    sf::RenderWindow* window;
+
+    void operator () ();  
+
+    exit_functor (sf::RenderWindow* window);
+};
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,10 +55,20 @@ public:
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////   Declaration of Class Clickable   /////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class Clickable {
+public:
+    virtual void clicked (std::size_t x, std::size_t y) = 0;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////   Declaration of Class Window   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Window: public sf::Drawable {
+class Window: public sf::Drawable, public Clickable {
 protected:
 
     virtual void draw (sf::RenderTarget& target, sf::RenderStates states) const;
@@ -65,7 +85,10 @@ public:
     Window (const char*  fileName, size_t x_size, size_t y_size);
 
     virtual bool is_window (std::size_t mouse_x, std::size_t mouse_y) const;
+
+    virtual void clicked (std::size_t x, std::size_t y) { std::cout << "NOTHING"; }
 };
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////   Declaration of Class Button   ////////////////////////////////////////////
@@ -85,11 +108,11 @@ protected:
 
 public:
 
-    void clicked ();  // not realised
+    virtual void clicked (std::size_t x, std::size_t y); 
 
     Button         () = default;
-    Button         (sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu = 0, size_t y_lu = 0);
-    Button         (const char* fileName, size_t x_size, size_t y_size, size_t x_lu = 0, size_t y_lu = 0);
+    Button         (Functor functor, sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu = 0, size_t y_lu = 0);
+    Button         (Functor functor, const char* fileName, size_t x_size, size_t y_size, size_t x_lu = 0, size_t y_lu = 0);
     
     virtual bool is_window (std::size_t mouse_x, std::size_t mouse_y) const;
 };
@@ -109,13 +132,15 @@ private:
 
     virtual void draw (sf::RenderTarget& target, sf::RenderStates states) const;
 
+    virtual void clicked (std::size_t x, std::size_t y);
+
 public:
 
     Button_with_text                () = default;
     const sf::Color& get_text_color () const;
-    Button_with_text                (sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, 
+    Button_with_text                (Functor functor, sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, 
                                      const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size);
-    Button_with_text                (const char* fileName, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, 
+    Button_with_text                (Functor functor, const char* fileName, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, 
                                      const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size);
     void set_button                 (const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size = 0);
     virtual bool is_window          (std::size_t mouse_x, std::size_t mouse_y) const;

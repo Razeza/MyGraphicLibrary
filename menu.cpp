@@ -1,13 +1,18 @@
 #include "menu.hpp"
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////   Realisation of Class exit_functor   ////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct exit_functor {
-    sf::RenderWindow* window;
+exit_functor::exit_functor (sf::RenderWindow* window):
+    window (window)
+{ }
 
-    void operator () () {
+
+void exit_functor::operator () () {
         window->close ();
-    }  
-};
+}  
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////   Realisation of Class Sprite   ////////////////////////////////////////////
@@ -97,6 +102,12 @@ bool Window::is_window (std::size_t mouse_x, std::size_t mouse_y) const {
 ////////////////////////////////////////////   Realisation of Class Button   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template<typename Functor>
+void Button<Functor>::clicked (std::size_t x, std::size_t y) {
+    if (is_window (x, y)) {
+        action ();
+    }
+}
 
 template<typename Functor>
 void Button<Functor>::draw (sf::RenderTarget& target, sf::RenderStates states) const {
@@ -110,7 +121,8 @@ bool Button<Functor>::is_window (std::size_t mouse_x, std::size_t mouse_y) const
 }
 
 template<typename Functor>
-Button<Functor>::Button (sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu):
+Button<Functor>::Button (Functor functor, sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu):
+    action (functor),
     Window (texture, x_size, y_size),
     x      (x_lu),
     y      (y_lu)
@@ -119,7 +131,8 @@ Button<Functor>::Button (sf::Texture* texture, size_t x_size, size_t y_size, siz
 }
 
 template<typename Functor>
-Button<Functor>::Button (const char* fileName, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu): 
+Button<Functor>::Button (Functor functor, const char* fileName, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu): 
+    action (functor),    
     Window (fileName, x_size, y_size),
     x      (x_lu),
     y      (y_lu)
@@ -131,6 +144,14 @@ Button<Functor>::Button (const char* fileName, size_t x_size, size_t y_size, siz
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////   Realisation of Class Button_with_text   ////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<typename Functor>
+void Button_with_text<Functor>::clicked (std::size_t x, std::size_t y) {
+    if (is_window (x, y)) {
+        this->action ();
+    }
+    check ()
+}
 
 template<typename Functor>
 bool Button_with_text<Functor>::is_window (std::size_t mouse_x, std::size_t mouse_y) const {
@@ -149,15 +170,15 @@ void Button_with_text<Functor>::draw (sf::RenderTarget& target, sf::RenderStates
 }
 
 template<typename Functor>
-Button_with_text<Functor>::Button_with_text (const char* file_name, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size):
-    Button<Functor> (file_name, x_size, y_size, x_lu, y_lu)
+Button_with_text<Functor>::Button_with_text (Functor functor, const char* file_name, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size):
+    Button<Functor> (functor, file_name, x_size, y_size, x_lu, y_lu)
 { 
     set_button (text_on_button, new_font, new_color, character_size);
 }
 
 template<typename Functor>
-Button_with_text<Functor>::Button_with_text (sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size):
-    Button<Functor> (texture, x_size, y_size, x_lu, y_lu)
+Button_with_text<Functor>::Button_with_text (Functor functor, sf::Texture* texture, size_t x_size, size_t y_size, size_t x_lu, size_t y_lu, const std::string& text_on_button, const sf::Font& new_font, const sf::Color& new_color, std::size_t character_size):
+    Button<Functor> (functor, texture, x_size, y_size, x_lu, y_lu)
 {
     set_button (text_on_button, new_font, new_color, character_size);
 }

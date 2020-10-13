@@ -1,7 +1,27 @@
 #include "application.hpp"
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Realisation of Class Graphic_Functor   ////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+Graphic_Functor::Graphic_Functor (Application* app, int j):
+    app (app),
+    j   (j)
+{ }
+
 void Graphic_Functor::operator () () {
-    
+    auto& info = app->data[j];
+    if (info.graph_to_draw == true) {
+        info.graph_to_draw = false;
+        return;
+    }
+
+    info.graph_to_draw = true;
+    info.sort_graphic = Research_graphic (Research::make_research (quantity_of_experiments, info.sort_functions, info.functions_names), 
+                                                info.button.get_text_color (),
+                                                graphic_1_x, graphics_y, 
+                                                graphic_2_x, graphics_y, graphic_size - 2 * paragraph);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,43 +36,18 @@ Helper::Helper (init* data):
 void Helper::draw (sf::RenderTarget& target, sf::RenderStates states) const {
 
     for (std::size_t j = 0; j < quantity_of_sorts; j++) {
-        for (const auto& i : data[j].buttons) {
-            target.draw (i);
+        target.draw (data[j].button);
+
+        if (!data[j].graph_to_draw) {
+            continue;
         }
 
-        for (std::size_t i = 0; i < quantity_of_sorts; i++) {
-            if (!data[j].graph_to_draw[i]) {
-                continue;
-            }
-
-            if (data[j].sort_graphic[i].get_array_size () == 0) {
-                continue;
-            }
-
-            target.draw (data[j].sort_graphic[i]);
+        if (data[j].sort_graphic.get_array_size () == 0) {
+            continue;
         }
-    }
-}
 
+        target.draw (data[j].sort_graphic);
 
-void Helper::button_pressed (std::size_t x, std::size_t y) {
-    for (std::size_t j = 0; j < quantity_of_sorts; j++) {
-        int k = 0;
-        for (const auto& i : data[j].buttons) {
-            if (i.is_window (x, y)) {
-                if (data[j].graph_to_draw[k] == true) {
-                    data[j].graph_to_draw[k++] = false;
-                    continue;
-                }
-
-                data[j].graph_to_draw[k] = true;
-                data[j].sort_graphic[k] = Research_graphic (Research::make_research (quantity_of_experiments, data[j].sort_functions[k], data[j].functions_names[k]), 
-                                                            data[j].buttons[k].get_text_color (),
-                                                            graphic_1_x, graphics_y, 
-                                                            graphic_2_x, graphics_y, graphic_size - 2 * paragraph);
-            }
-            k++;
-        }
     }
 }
 
@@ -69,7 +64,7 @@ void Application::draw (sf::RenderTarget& target, sf::RenderStates states) const
         
     }
 
-#define init_help_button(j, but_x, text, text_color, text_size) Button_with_text<Graphic_Functor> (&button_texture, but_width, but_height, but_x, 800, text, font, text_color, text_size)  
+#define init_help_button(j, but_x, text, text_color, text_size) Button_with_text<Graphic_Functor> (Graphic_Functor (this, j), &button_texture, but_width, but_height, but_x, 800, text, font, text_color, text_size)  
 Application::Application ():
     window       (sf::VideoMode (width, height), "sort analyzer"),
     back         (background_image, 0, 0, width, height),
@@ -77,13 +72,14 @@ Application::Application ():
     sort_graphic ({ Graphic (graphic_size, graphic_size, 2 * paragraph, "arr_size", "cmp" ), 
                     Graphic (graphic_size, graphic_size, 2 * paragraph, "arr_size", "swap")}),
 
-    exit_button  (&button_texture, but_width, but_height, width/2 - but_width/2, 500, "Exit", font, sf::Color::Magenta, 75),
+    exit_button  (exit_functor (&window), &button_texture, but_width, but_height, width/2 - but_width/2, 500, "Exit", font, sf::Color::Magenta, 75),
 
-    data         ({ { { qsort<int, Research::functor<int>>       }, { "qsort"       }, { }, { init_help_button (1, 330,  "Qsort",  sf::Color::Green, 70) }, { false } },
-                    { { bubble_sort<int, Research::functor<int>> }, { "bubble sort" }, { }, { init_help_button (2, 860,  "Bubble", sf::Color::Red,   60) }, { false } },
-                    { { heapSort<int, Research::functor<int>>    }, { "heap"        }, { }, { init_help_button (3, 1390, "Heap",   sf::Color::Blue,  70) }, { false } } }),
+    data         ({ { { qsort<int, Research::functor<int>>       }, { "qsort"       }, { }, { init_help_button (0, 330,  "Qsort",  sf::Color::Green, 70) }, { false } },
+                    { { bubble_sort<int, Research::functor<int>> }, { "bubble sort" }, { }, { init_help_button (1, 860,  "Bubble", sf::Color::Red,   60) }, { false } },
+                    { { heapSort<int, Research::functor<int>>    }, { "heap"        }, { }, { init_help_button (2, 1390, "Heap",   sf::Color::Blue,  70) }, { false } } }),
 
-    sort_info    (data)
+    sort_info    (data),
+    buttons      {&data[0].button, &data[1].button, &data[2].button, &exit_button}
 { 
     set_font ();
     set_button_texture ();
@@ -116,13 +112,10 @@ void Application::set_font () {
 
 int Application::button_pressed (std::size_t x, std::size_t y) {
 
-    sort_info.button_pressed (x, y);
-
-    if (exit_button.is_window (x, y)) {
-        return CLOSE;
+    
+    for (const auto& i : buttons) {
+        i->clicked (x, y);
     }
-
-    return NOTHING;
 }
 
 auto Application::is_open () -> decltype (window.isOpen ()) {

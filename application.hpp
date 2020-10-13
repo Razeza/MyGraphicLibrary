@@ -61,6 +61,7 @@ struct Graphic_Functor {
     void operator () (); 
 
     Graphic_Functor () = default;
+    Graphic_Functor (Application* app, int j);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,11 +78,11 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     struct init {
-        sort_function_type*                    sort_functions [quantity_of_sorts];
-        std::string                            functions_names[quantity_of_sorts];
-        Research_graphic                       sort_graphic   [quantity_of_sorts];
-        Button_with_text<Graphic_Functor>      buttons        [quantity_of_sorts];
-        bool                                   graph_to_draw  [quantity_of_sorts]; 
+        sort_function_type*                    sort_functions;
+        std::string                            functions_names;
+        Research_graphic                       sort_graphic;
+        Button_with_text<Graphic_Functor>      button;
+        bool                                   graph_to_draw; 
     };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,7 +130,7 @@ public:
 
 
 
-    friend class Functor;
+    friend class Graphic_Functor;
 
     Application ();
 
