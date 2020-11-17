@@ -1,19 +1,8 @@
 #ifndef GRAPH_LIB_GRAPHIC_LIBRARY_H
 #define GRAPH_LIB_GRAPHIC_LIBRARY_H
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Declaration of Class Abstract_window   ////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class Abstract_window
-{
-public:
-    virtual void render () = 0;
-    virtual bool process_event (const Event& event) = 0;
-    virtual ~Abstract_window () {};
-};
+#include "event.cpp"
+#include "tx_define.cpp"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Background   /////////////////////////////////////////////
@@ -56,10 +45,10 @@ public:
         y_shift += shift.y;
     }
 
-    virtual bool process_event (const Event& event) override;
-    virtual void render        ()                   override;
+    virtual bool process_event (Event* event) override;
+    virtual void render        ()             override;
 
-    virtual ~Background () { }
+    virtual ~Background () = default;
 };
 
 
@@ -97,18 +86,19 @@ class Button: public Background, public Clickable
 private:
     Action action;
     int thickness;
+    Mouse_button_event::Mouse_button button_to_press;
 public:
 
     Button() = default;
 
-    Button (Action action_init, const char* name, double init_width, double init_height, double x_init, double y_init);
-    Button (Action action_init, Color color     , double init_width, double init_height, double x_init, double y_init, Color line_color = NO_COLOR, int thickness = 0);
+    Button (Action action_init, const char* name, double init_width, double init_height, double x_init, double y_init, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
+    Button (Action action_init, Color color     , double init_width, double init_height, double x_init, double y_init, Color line_color = NO_COLOR, int thickness = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
 
     virtual bool contains_point (double mouse_x, double mouse_y) override;
     virtual void hover    () override;
     virtual bool clicked  (double mouse_x, double mouse_y) override;
     virtual void render   () override;
-    virtual bool process_event (const Event& event) override;
+    virtual bool process_event (Event* event) override;
 
     virtual ~Button () { }
 
@@ -126,12 +116,10 @@ struct Key_functor
             key (init_key)
     { }
 
-    int key;
+    keys key;
     void operator () ()
     {
-        Event::Type_event init;
-        init.event2 = {KEY_CLICKED, key};
-        add_event (init);
+        add_event (new Keybord_event (key));
     }
 };
 
@@ -146,16 +134,14 @@ class Window: public Background, public Clickable
 private:
     struct Close_functor
     {
-        Close_functor (void* init):
+        Close_functor (Abstract_window* init):
                 window (init)
         { }
 
-        void* window;
+        Abstract_window* window;
         void operator () ()
         {
-            Event::Type_event init;
-            init.event4 = Event::Close_window (CLOSE_WINDOW, window);
-            add_event (init);
+            add_event (new Close_window_event(window));
         }
     };
 
@@ -204,7 +190,7 @@ public:
 
     virtual void render   () override;
 
-    virtual bool process_event (const Event& event) override;
+    virtual bool process_event (Event* event) override;
 
     virtual ~Window ();
 };
@@ -225,7 +211,7 @@ public:
 
     void manage_windows ();
 
-    virtual bool process_event (const Event& event) override;
+    virtual bool process_event (Event* event) override;
 
     virtual void render () override ;
 };
@@ -241,6 +227,8 @@ private:
     Point real_size;
     char what;
 
+    bool pressed = false;
+
     struct Scroller: Abstract_window
     {
         double cur_x;
@@ -253,11 +241,13 @@ private:
 
         Color color;
 
+        bool contains_point (double mouse_x, double mouse_y);
+
         Scroller (double init_width, double init_height, double init_x, double init_y, Color init_color);
 
         virtual void render ();
 
-        virtual bool process_event (const Event& event);
+        virtual bool process_event (Event* event);
     };
 
 
@@ -267,7 +257,8 @@ private:
     Button<Key_functor> rect;
     Scroller            scroller;
 
-
+    void set_up_down (double shift);
+    void set_right_left (double shift);
 
 public:
 
@@ -285,7 +276,7 @@ public:
 
     virtual void render () override;
 
-    virtual bool process_event (const Event& event) override;
+    virtual bool process_event (Event* event) override;
 
     virtual ~Scrollbar ();
 
@@ -316,6 +307,8 @@ private:
     double cur_x;
     double cur_y;
 
+    bool pressed = false;
+
 
     void page_up (double shift);
 
@@ -327,6 +320,13 @@ private:
 
 public:
 
+    Window_with_scrollbar  (const char* name,
+                            double init_width,
+                            double init_height,
+                            double init_real_width,         // real size of image
+                            double init_real_height,        // real size of image
+                            double init_x,
+                            double init_y);
 
     Window_with_scrollbar  (const char* name,
                             double init_width,
@@ -357,7 +357,7 @@ public:
 
     virtual void render () override;
 
-    virtual bool process_event (const Event& event) override;
+    virtual bool process_event (Event* event) override;
 
     virtual ~Window_with_scrollbar ();
 };

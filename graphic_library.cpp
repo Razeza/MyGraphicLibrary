@@ -1,9 +1,10 @@
-#include "graphic_library.hpp"
+
 
 #ifndef GRAPHIC_LIBRARY
     #define GRAPHIC_LIBRARY
 
-
+#include "graphic_library.hpp"
+#include "subscription_manager.cpp"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class Background   /////////////////////////////////////////////
@@ -86,7 +87,7 @@ void Background::render ()
     draw_rectangle (x, y, x + width, y + height);
 }
 
-bool Background::process_event (const Event &event)
+bool Background::process_event (Event* event)
 {
     return false;
 }
@@ -97,15 +98,17 @@ bool Background::process_event (const Event &event)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<typename Action>
-Button<Action>::Button (Action action_init, const char* name, double init_width, double init_height, double x_init, double y_init):
-        Background (name, init_width, init_height, x_init, y_init, init_width, init_height),
-        action     (action_init)
+Button<Action>::Button (Action action_init, const char* name, double init_width, double init_height, double x_init, double y_init, Mouse_button_event::Mouse_button init_button):
+        Background      (name, init_width, init_height, x_init, y_init, init_width, init_height),
+        action          (action_init),
+        button_to_press (init_button)
 { }
 
 template<typename Action>
-Button<Action>::Button (Action action_init, Color color, double init_width, double init_height, double x_init, double y_init, Color init_line_color, int thickness):
-        Background (color, init_width, init_height, x_init, y_init, init_width, init_height, init_line_color, thickness),
-        action     (action_init)
+Button<Action>::Button (Action action_init, Color color, double init_width, double init_height, double x_init, double y_init, Color init_line_color, int thickness, Mouse_button_event::Mouse_button init_button):
+        Background      (color, init_width, init_height, x_init, y_init, init_width, init_height, init_line_color, thickness),
+        action          (action_init),
+        button_to_press (init_button)
 { }
 
 template<typename Action>
@@ -142,13 +145,24 @@ void Button <Action>::hover ()
 { }
 
 template <typename Action>
-bool Button <Action>::process_event (const Event& event)
+bool Button <Action>::process_event (Event* event)
 {
-    if (event.event.event1.event_type == BUTTON_CLICKED)
+    if (event->get_type () == BUTTON_CLICKED)
     {
         auto cur_coordinates = get_mouse_coordinates ();
-        clicked (cur_coordinates.x, cur_coordinates.y);
-        return true;
+
+        if (dynamic_cast<Mouse_button_event*> (event)->action == PRESSED &&
+            dynamic_cast<Mouse_button_event*> (event)->button == button_to_press) {
+            if (contains_point (cur_coordinates.x, cur_coordinates.y))
+            {
+                return true;
+            }
+        }
+
+        if (dynamic_cast<Mouse_button_event*> (event)->action == RELEASED) {
+            if (dynamic_cast<Mouse_button_event*> (event)->button == button_to_press)
+                return clicked (cur_coordinates.x, cur_coordinates.y);
+        }
     }
     return false;
 }
@@ -178,7 +192,7 @@ Window::Window (const char* name,
                       init_height - 2*init_frame_height,
                       init_x + init_frame_width, init_y + init_frame_height,
                       init_real_width, init_real_height),
-        close_window (Close_functor ((void*) this), {127, 0, 0}, button_width, init_frame_height, init_x + init_width - button_width, init_y),
+        close_window (Close_functor (this), {127, 0, 0}, button_width, init_frame_height, init_x + init_width - button_width, init_y),
         width        (init_width),
         height       (init_height),
         x            (init_x),
@@ -201,14 +215,14 @@ Window::Window (Color color,
                           init_height - 2*init_frame_height,
                           init_x + init_frame_width, init_y + init_frame_height,
                           init_real_width, init_real_height),
-            close_window (Close_functor ((void*) this), {127, 0, 0}, button_width, init_frame_height, init_x + init_width - button_width, init_y),
+            close_window (Close_functor (this), {127, 0, 0}, button_width, init_frame_height, init_x + init_width - button_width, init_y),
             width        (init_width),
             height       (init_height),
             x            (init_x),
             y            (init_y),
             frame_width  (init_frame_width),
             frame_height (init_frame_height)
-    { }
+{ }
 
 
 bool Window::contains_point (double mouse_x, double mouse_y)
@@ -236,13 +250,9 @@ void Window::render ()
     close_window.render ();
 }
 
-bool Window::process_event (const Event& event)
+bool Window::process_event (Event* event)
 {
-    if (event.event.event1.event_type == BUTTON_CLICKED)
-    {
-        return clicked (event.event.event1.coordinates.x, event.event.event1.coordinates.y);
-    }
-    return false;
+    return close_window.process_event (event);
 }
 
 Window::~Window () { }
@@ -266,19 +276,23 @@ void Window_manager::manage_windows ()
         store_events ();
     }
 
-    Event cur_event = get_event ();
-    if (cur_event.event.event1.event_type != NO_EVENT)
+    while (!empty_queue ())
     {
+        Event* cur_event = get_event ();
+        if (top_manager && cur_event->get_type () == PROGRAM_CLOSE) {
+            exit (0);
+        }
         process_event (cur_event);
-        render ();
     }
+
+    render ();
 }
 
-bool Window_manager::process_event (const Event& event)
+bool Window_manager::process_event (Event* event)
 {
-    if (event.event.event1.event_type == CLOSE_WINDOW)
+    if (event->get_type () == CLOSE_WINDOW)
     {
-        auto it = std::find (windows.begin (), windows.end (), event.event.event4.window);
+        auto it = std::find (windows.begin (), windows.end (), dynamic_cast<Close_window_event*> (event)->get_window ());
         windows.erase (it);
     }
 
@@ -322,8 +336,18 @@ void Scrollbar::Scroller::render ()
     draw_rectangle (cur_x, cur_y, cur_x + width, cur_y + height);
 }
 
-bool Scrollbar::Scroller::process_event (const Event& event)
+bool Scrollbar::Scroller::process_event (Event* event)
 { }
+
+bool Scrollbar::Scroller::contains_point (double mouse_x, double mouse_y)
+{
+    if ((mouse_x >= cur_x && mouse_x <= cur_x + width) &&
+        (mouse_y >= cur_y && mouse_y <= cur_y + height))
+    {
+        return true;
+    }
+    return false;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class Scrollbar   //////////////////////////////////////////////
@@ -378,52 +402,118 @@ void Scrollbar::render ()
     scroller.render ();
 }
 
-bool Scrollbar::process_event (const Event& event)
+bool Scrollbar::process_event (Event* event)
 {
-    if (rect.contains_point (event.event.event1.coordinates.x, event.event.event1.coordinates.y))
+    if (dynamic_cast<Mouse_button_event*> (event)->action == RELEASED) {
+        pressed = false;
+        return false;
+    }
+
+    if (pressed || scroller.contains_point (dynamic_cast<Mouse_button_event*> (event)->pos.x, dynamic_cast<Mouse_button_event*> (event)->pos.y))
+    {
+        pressed = true;
+        auto new_y = dynamic_cast<Mouse_button_event*> (event)->pos.y;
+        auto new_x = dynamic_cast<Mouse_button_event*> (event)->pos.x;
+
+        if (what == 0)
+        {
+
+            if (new_y < y + height &&
+                new_y > y)
+            {
+
+                if (scroller.cur_y - new_y < 0)
+                {
+                    add_event (new Scroll_event (Scroll_event::DOWN, new_y - scroller.cur_y));
+                } else
+                {
+                    add_event (new Scroll_event (Scroll_event::UP, scroller.cur_y - new_y));
+                }
+                double cur_shift = (height - 3*width)/(real_size.y - height)*(new_y - scroller.cur_y);
+                set_up_down (cur_shift);
+            }
+        }
+        else
+        {
+            if (new_x < x + width &&
+                new_x > x)
+            {
+                if (scroller.cur_x - new_x < 0)
+                {
+                    add_event (new Scroll_event (Scroll_event::RIGHT, new_x - scroller.cur_x));
+                } else
+                {
+                    add_event (new Scroll_event (Scroll_event::LEFT, scroller.cur_x - new_x));
+                }
+                double cur_shift = (width - 3*height)/(real_size.x - width)*(new_x - scroller.cur_x);
+                set_right_left (cur_shift);
+            }
+        }
+        return true;
+    }
+
+    if (rect.contains_point (dynamic_cast<Mouse_button_event*> (event)->pos.x, dynamic_cast<Mouse_button_event*> (event)->pos.y))
     {
         if (what == 0)
         {
-            if (event.event.event1.coordinates.y < scroller.cur_y)
+            if (dynamic_cast<Mouse_button_event*> (event)->pos.y < scroller.cur_y)
             {
                 rect.change_action (Key_functor (ARROW_UP));
-            } else if (event.event.event1.coordinates.y > scroller.cur_y + scroller.height)
+            } else if (dynamic_cast<Mouse_button_event*> (event)->pos.y > scroller.cur_y + scroller.height)
                 {
                     rect.change_action (Key_functor (ARROW_DOWN));
                 }
         }
         else
         {
-            if (event.event.event1.coordinates.x < scroller.cur_x)
+            if (dynamic_cast<Mouse_button_event*> (event)->pos.x < scroller.cur_x)
             {
                 rect.change_action (Key_functor (ARROW_LEFT));
-            } else if (event.event.event1.coordinates.x > scroller.cur_x + scroller.width)
+            } else if (dynamic_cast<Mouse_button_event*> (event)->pos.x > scroller.cur_x + scroller.width)
                 {
                     rect.change_action (Key_functor (ARROW_RIGHT));
                 }
         }
     }
-    clicked (event.event.event1.coordinates.x, event.event.event1.coordinates.y);
+    return clicked (dynamic_cast<Mouse_button_event*> (event)->pos.x, dynamic_cast<Mouse_button_event*> (event)->pos.y);
 }
 
 Scrollbar::~Scrollbar () { }
 
+void Scrollbar::set_up_down (double shift)
+{
+    if (scroller.cur_y + shift < scroller.y + height - 4*width - 3 && scroller.cur_y + shift > scroller.y)
+    {
+        scroller.cur_y += shift;
+    } else if (scroller.cur_y + shift >= scroller.y + height - 4*width - 3) {
+            scroller.cur_y = scroller.y + height - 4*width - 3;
+        } else if (scroller.cur_y + shift <= scroller.y) {
+                scroller.cur_y = scroller.y;
+            }
+}
+
 void Scrollbar::up_down (double shift)
 {
     double cur_shift = (height - 3*width)/(real_size.y - height)*shift;
-    if (scroller.cur_y + cur_shift < scroller.y + height - 4*width - 3 && scroller.cur_y + cur_shift > scroller.y)
+    set_up_down (cur_shift);
+}
+
+void Scrollbar::set_right_left (double shift)
+{
+    if (scroller.cur_x + shift < scroller.x + width - 4*height - 3 && scroller.cur_x + shift > scroller.x)
     {
-        scroller.cur_y += cur_shift;
-    }
+        scroller.cur_x += shift;
+    } else if (scroller.cur_x + shift >= scroller.x + width - 4*height - 3) {
+            scroller.cur_x = scroller.x + width - 4*height - 3;
+        } else if (scroller.cur_x + shift <= scroller.x)  {
+                scroller.cur_x = scroller.x;
+            }
 }
 
 void Scrollbar::right_left (double shift)
 {
     double cur_shift = (width - 3*height)/(real_size.x - width)*shift;
-    if (scroller.cur_x + cur_shift < scroller.x + width - 4*height - 3 && scroller.cur_x + cur_shift > scroller.x)
-    {
-        scroller.cur_x += cur_shift;
-    }
+    set_right_left (cur_shift);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -475,6 +565,31 @@ void Window_with_scrollbar::page_right (double shift)
     }
 }
 
+
+Window_with_scrollbar::Window_with_scrollbar (const char* name, double init_width, double init_height, double init_real_width, double init_real_height, double init_x, double init_y):
+        Window (name, init_width, init_height, init_x, init_y, 0, 10, 30, init_width, init_height),
+        bar    {{x + width - frame_width - 16,
+                        y + frame_height,
+                        16, height - 2*frame_height,
+                        15, 20, {100, 100, 100},
+                        "scroll-bar-arrow-up.bmp", "scroll-bar-arrow-down.bmp", Y_BAR,
+                        {init_real_width, init_real_height},
+                        {120, 120, 120}},
+                {x + frame_width,
+                        y + height - frame_height - 16,
+                        width - 2*frame_width, 16,
+                        20, 15, {100, 100, 100},
+                        "scroll-bar-arrow-left.bmp", "scroll-bar-arrow-right.bmp", X_BAR,
+                        {init_real_width, init_real_height},
+                        {120, 120, 120}}},
+        kind_of_bar (X_Y_BAR),
+        max_x  (init_real_width - init_width + 2*0),
+        max_y  (init_real_height - init_height + 2*10),
+        cur_x  (0),
+        cur_y  (0)
+{
+
+}
 
 Window_with_scrollbar::Window_with_scrollbar   (const char* name,
                                                 double init_width,
@@ -529,12 +644,10 @@ bool Window_with_scrollbar::contains_point (double mouse_x, double mouse_y)
 };
 
 void Window_with_scrollbar::hover ()
-{ };
+{ }
 
 bool Window_with_scrollbar::clicked (double mouse_x, double mouse_y)
-{
-    Window::clicked (mouse_x, mouse_y);
-};
+{ }
 
 void Window_with_scrollbar::render ()
 {
@@ -551,14 +664,46 @@ void Window_with_scrollbar::render ()
 
 
 
-bool Window_with_scrollbar::process_event (const Event& event)
+bool Window_with_scrollbar::process_event (Event* event)
 {
-    if (event.event.event1.event_type == BUTTON_CLICKED)
+    if (Window::process_event (event) == true) {
+        return true;
+    }
+
+    if (event->get_type () == SCROLL_EVENT) {
+        double shift = dynamic_cast<Scroll_event*> (event)->shift;
+        switch (dynamic_cast<Scroll_event*> (event)->direction)
+        {
+            case Scroll_event::UP:
+            {
+                page_up (shift);
+                break;
+            }
+            case Scroll_event::DOWN:
+            {
+                page_down (shift);
+                break;
+            }
+            case Scroll_event::RIGHT:
+            {
+                page_right (shift);
+                break;
+            }
+            case Scroll_event::LEFT:
+            {
+                page_left (shift);
+                break;
+            }
+        }
+        return true;
+    }
+
+    if (event->get_type () == BUTTON_CLICKED)
     {
         bool return1 = false;
         if (kind_of_bar == X_Y_BAR)
         {
-            bool return1 = bar[0].process_event (event);
+            return1 = bar[0].process_event (event);
             bool return2 = bar[1].process_event (event);
             if (return1 || return2)
             {
@@ -568,12 +713,13 @@ bool Window_with_scrollbar::process_event (const Event& event)
         {
             return1 = bar[kind_of_bar].process_event (event);
         }
-        return return1 || clicked (event.event.event1.coordinates.x, event.event.event1.coordinates.y);
+        return return1;
     }
 
-    if (event.event.event1.event_type == KEY_CLICKED)
+    if (event->get_type () == KEY_CLICKED)
     {
-        switch (event.event.event2.key)
+        auto key_event = dynamic_cast<Keybord_event*> (event);
+        switch (key_event->key)
         {
             case ARROW_UP:
             {
@@ -605,15 +751,30 @@ bool Window_with_scrollbar::process_event (const Event& event)
 
             case PAGE_UP:
             {
-                page_up (height);
-                bar[0].up_down (-height);
+                if (!pressed && key_event->action == PRESSED) {
+                    pressed = true;
+                    page_up (height);
+                    bar[0].up_down (-height);
+                }
+
+                if (key_event->action == RELEASED) {
+                    pressed = false;
+                }
+
                 break;
             }
 
             case PAGE_DOWN:
             {
-                page_down (height);
-                bar[0].up_down (height);
+                if (!pressed && key_event->action == PRESSED) {
+                    pressed = true;
+                    page_down (height);
+                    bar[0].up_down (height);
+                }
+
+                if (key_event->action == RELEASED) {
+                    pressed = false;
+                }
                 break;
             }
 
@@ -630,6 +791,8 @@ bool Window_with_scrollbar::process_event (const Event& event)
 }
 
 Window_with_scrollbar::~Window_with_scrollbar () { }
+
+
 
 
 

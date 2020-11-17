@@ -1,18 +1,12 @@
+#ifndef TX_DEFINE_HPP
+#define TX_DEFINE_HPP
 
-
+#include "event.cpp"
 #include "D:\\TX\TXlib.h"
+#include "basics.cpp"
 #include <queue>
 #include <memory>
 
-enum keys
-{
-    PAGE_UP     = VK_PRIOR,
-    PAGE_DOWN   = VK_NEXT,
-    ARROW_UP    = VK_UP,
-    ARROW_DOWN  = VK_DOWN,
-    ARROW_RIGHT = VK_RIGHT,
-    ARROW_LEFT  = VK_LEFT
-};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Engine   ////////////////////////////////////////////
@@ -35,12 +29,13 @@ private:
     HFONT               cur_font;
     std::string         name_of_cur_font;
 
-    std::queue<Event> queue_of_events;
+    std::queue<Event*> queue_of_events;
     friend void create_window (double      size_x, double size_y);
     friend bool load_font     (const char* name,   int    y_size);
     friend bool set_font      (double      size_y, double size_x);
-    friend void add_event     (const Event& new_event);
-    friend Event get_event    ();
+    friend void add_event     (Event* new_event);
+    friend Event* get_event   ();
+    friend bool empty_queue   ();
 
 
     bool load_and_set_font (double size_y, double size_x);
@@ -53,8 +48,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void store_events ();
-void add_event    (const Event& new_event);
-Event get_event   ();
+void add_event    (Event* new_event);
+Event* get_event   ();
+bool empty_queue ();
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Window Functions   /////////////////////////////////////////////
@@ -121,14 +117,9 @@ Image load_image (const char* name, double width, double height);
 
 Point get_mouse_coordinates ();
 
-enum button
-{
-    NOTHING_CLICKED      = 0,
-    LEFT_BUTTON_CLICKED  = 1,
-    RIGHT_BUTTON_CLICKED = 2
-};
-
 // returns 0 - if nothing pressed
 //         1 - if left button pressed
 //         2 - if right button pressed
-char is_clicked ();
+Mouse_button_event::Mouse_button is_clicked ();
+
+#endif
