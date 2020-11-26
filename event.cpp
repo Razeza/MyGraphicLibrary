@@ -51,4 +51,18 @@ Scroll_event::Scroll_event (type init_direction, double init_shift):
 { }
 
 
+
+Canvas_event::Canvas_event (Canvas_event::tools init_tool):
+    Event (CANVAS_EVENT),
+    tool (init_tool)
+{ }
+
+Thickness_event::Thickness_event (int plus) :
+    Event (THICKNESS_EVENT),
+    plus (plus)
+{ }
+
+
 #endif
+
+

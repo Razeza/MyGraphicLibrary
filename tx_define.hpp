@@ -1,11 +1,9 @@
 #ifndef TX_DEFINE_HPP
 #define TX_DEFINE_HPP
 
-#include "event.cpp"
+
 #include "D:\\TX\TXlib.h"
-#include "basics.cpp"
-#include <queue>
-#include <memory>
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +65,6 @@ void set_line_color          (Color color, int line_thickness = 10);
 void set_fill_color          (Color color);
 void set_line_and_fill_color (Color color, int line_thickness = 10);
 
-void draw_pixel              (double x0, double y0, Color color);
 void draw_line               (double x0, double y0, double x1, double y1,                       Color color = {-1, -1, -1}, int line_thickness = 10);
 void draw_rectangle          (double x0, double y0, double x1, double y1,                       Color color = {-1, -1, -1}, int line_thickness = 10);
 void draw_triangle           (double x0, double y0, double x1, double y1, double x2, double y2, Color color = {-1, -1, -1}, int line_thickness = 10);

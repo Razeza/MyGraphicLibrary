@@ -4,7 +4,7 @@
 
 
 #include "tx_define.hpp"
-#include <winuser.h>
+
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -296,6 +296,7 @@ Point Image::get_size ()
 
 Image load_image (const char* name, double width, double height)
 {
+    // Если не загружается рисуй белуб хуйню
     return {txLoadImage (name), width, height};
 }
 

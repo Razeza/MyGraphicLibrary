@@ -4,7 +4,6 @@
     #define GRAPHIC_LIBRARY
 
 #include "graphic_library.hpp"
-#include "subscription_manager.cpp"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class Background   /////////////////////////////////////////////
@@ -22,7 +21,9 @@ Background::Background (const char* name, double init_width, double init_height,
         y           (init_y),
         width       (init_width),
         height      (init_height)
-{ }
+{
+    back_img.set_pos ({x, y});
+}
 
 Background::Background (const char* name, double init_width, double init_height, double init_x, double init_y, double init_real_width, double init_real_height):
         back_img    (load_image (name, init_width, init_height)),
@@ -33,7 +34,9 @@ Background::Background (const char* name, double init_width, double init_height,
         height      (init_height),
         real_width  (init_real_width),
         real_height (init_real_height)
-{ }
+{
+    back_img.set_pos ({x, y});
+}
 
 
 Background::Background (Color init_color, double init_width, double init_height, double init_x, double init_y, Color init_line_clor, int init_thickness):
@@ -46,6 +49,7 @@ Background::Background (Color init_color, double init_width, double init_height,
         thickness (init_thickness),
         line_color (init_line_clor)
 {
+    back_img.set_pos ({x, y});
     if (thickness == 0)
     {
         line_color = color;
@@ -66,6 +70,7 @@ Background::Background (Color init_color, double init_width, double init_height,
     real_width  (init_real_width),
     real_height (init_real_height)
 {
+    back_img.set_pos ({x, y});
     if (thickness == 0)
     {
         line_color = color;
@@ -78,7 +83,7 @@ void Background::render ()
 {
     if (back_img.exist ())
     {
-        back_img.draw (x, y, x_shift, y_shift);
+        back_img.draw ();
         return;
     }
 
@@ -90,6 +95,28 @@ void Background::render ()
 bool Background::process_event (Event* event)
 {
     return false;
+}
+
+void Background::change_size (Point new_size)
+{
+    width = new_size.x;
+    height = new_size.y;
+}
+
+void Background::move (Point new_size)
+{
+    x = new_size.x;
+    y = new_size.y;
+}
+
+void Background::change_coordinates (Point shift)
+{
+    back_img.shift_coordinates (shift);
+}
+
+Image* Background::get_image ()
+{
+    return &back_img;
 }
 
 
@@ -149,7 +176,7 @@ bool Button <Action>::process_event (Event* event)
 {
     if (event->get_type () == BUTTON_CLICKED)
     {
-        auto cur_coordinates = get_mouse_coordinates ();
+        auto cur_coordinates = dynamic_cast<Mouse_button_event*> (event)->pos;
 
         if (dynamic_cast<Mouse_button_event*> (event)->action == PRESSED &&
             dynamic_cast<Mouse_button_event*> (event)->button == button_to_press) {
@@ -187,10 +214,10 @@ Window::Window (const char* name,
                 double init_frame_height,
                 double button_width,
                 double init_real_width,
-                double init_real_height):
-        Background   (name, init_width - 2*init_frame_width,
-                      init_height - 2*init_frame_height,
-                      init_x + init_frame_width, init_y + init_frame_height,
+                double init_real_height,
+                Point image_size, Point image_start):
+        Background   (name, image_size.x, image_size.y,
+                      init_x + image_start.x, init_y + image_start.y,
                       init_real_width, init_real_height),
         close_window (Close_functor (this), {127, 0, 0}, button_width, init_frame_height, init_x + init_width - button_width, init_y),
         width        (init_width),
@@ -268,9 +295,8 @@ Window_manager::Window_manager (std::vector<Abstract_window*> init_windows, bool
         top_manager (init_top_manager)
 { }
 
-void Window_manager::manage_windows ()
+Window_manager::codes Window_manager::manage_windows ()
 {
-    txBegin ();
     if (top_manager)
     {
         store_events ();
@@ -280,12 +306,13 @@ void Window_manager::manage_windows ()
     {
         Event* cur_event = get_event ();
         if (top_manager && cur_event->get_type () == PROGRAM_CLOSE) {
-            exit (0);
+            return CLOSE;
         }
         process_event (cur_event);
     }
 
     render ();
+    return OK;
 }
 
 bool Window_manager::process_event (Event* event)
@@ -320,8 +347,8 @@ void Window_manager::render ()
 
 
 Scrollbar::Scroller::Scroller (double init_width, double init_height, double init_x, double init_y, Color init_color):
-        cur_x       (init_x + 1),
-        cur_y       (init_y + 1),
+        cur_x       (init_x),
+        cur_y       (init_y),
         x           (init_x),
         y           (init_y),
         width       (init_width),
@@ -353,15 +380,15 @@ bool Scrollbar::Scroller::contains_point (double mouse_x, double mouse_y)
 ///////////////////////////////////////   Realisation of Class Scrollbar   //////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 Scrollbar::Scrollbar(double init_x, double init_y, double init_width, double init_height,
                      double init_scroller_width, double init_scroller_height, Color init_scroller_color,
-                     const char* button_up, const char* button_down, char kind, Point init_real_size, Color color):
+                     const char* button_up, const char* button_down, Point init_real_size, Point shown_size, char kind, Color color):
             x         (init_x),
             y         (init_y),
             width     (init_width),
             height    (init_height),
             real_size (init_real_size),
+            shown_size (shown_size),
             what      (kind),
             page_up   (kind == 0 ? Key_functor (ARROW_UP) : Key_functor (ARROW_LEFT),
                        button_up,   kind == 0 ? init_width : init_height, kind == 0 ? init_width : init_height, init_x, init_y),
@@ -401,6 +428,7 @@ void Scrollbar::render ()
     rect.render ();
     scroller.render ();
 }
+
 
 bool Scrollbar::process_event (Event* event)
 {
@@ -482,11 +510,11 @@ Scrollbar::~Scrollbar () { }
 
 void Scrollbar::set_up_down (double shift)
 {
-    if (scroller.cur_y + shift < scroller.y + height - 4*width - 3 && scroller.cur_y + shift > scroller.y)
+    if (scroller.cur_y + shift < scroller.y + height - scroller.height - 3*width && scroller.cur_y + shift > scroller.y)
     {
         scroller.cur_y += shift;
-    } else if (scroller.cur_y + shift >= scroller.y + height - 4*width - 3) {
-            scroller.cur_y = scroller.y + height - 4*width - 3;
+    } else if (scroller.cur_y + shift >= scroller.y + height - scroller.height - 3*width) {
+            scroller.cur_y = scroller.y + height - scroller.height - 3*width;
         } else if (scroller.cur_y + shift <= scroller.y) {
                 scroller.cur_y = scroller.y;
             }
@@ -494,93 +522,281 @@ void Scrollbar::set_up_down (double shift)
 
 void Scrollbar::up_down (double shift)
 {
-    double cur_shift = (height - 3*width)/(real_size.y - height)*shift;
+    double cur_shift = (height - scroller.height - 3*width)*shift/(real_size.y - shown_size.y);
     set_up_down (cur_shift);
 }
 
 void Scrollbar::set_right_left (double shift)
 {
-    if (scroller.cur_x + shift < scroller.x + width - 4*height - 3 && scroller.cur_x + shift > scroller.x)
+    if (scroller.cur_x + shift < scroller.x  + width - scroller.width - 3*height && scroller.cur_x + shift > scroller.x)
     {
         scroller.cur_x += shift;
-    } else if (scroller.cur_x + shift >= scroller.x + width - 4*height - 3) {
-            scroller.cur_x = scroller.x + width - 4*height - 3;
-        } else if (scroller.cur_x + shift <= scroller.x)  {
+    } else if (scroller.cur_x + shift >= scroller.x  + width - scroller.width - 3*height) {
+            scroller.cur_x = scroller.x  + width - scroller.width  - 3*height;
+        } else if (scroller.cur_x + shift  <= scroller.x)  {
                 scroller.cur_x = scroller.x;
             }
 }
 
 void Scrollbar::right_left (double shift)
 {
-    double cur_shift = (width - 3*height)/(real_size.x - width)*shift;
+    double cur_shift = (width - scroller.width - 3*height)*shift/(real_size.x - shown_size.x);
     set_right_left (cur_shift);
 }
+
+void Scrollbar::set_real_size (Point size)
+{
+    real_size = size;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Scroller Helper Functions   ///////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void page_up (Scrollable* image, double shift)
+{
+    auto cur = image->get_cur_start ();
+    auto cur_y = cur.y;
+    if (cur_y > 0)
+    {
+        double plus_y = std::min (shift, cur_y);
+
+        image->shift_coordinates ({0, -plus_y});
+    }
+}
+
+void page_left (Scrollable* image, double shift)
+{
+    auto cur = image->get_cur_start ();
+    auto cur_x = cur.x;
+    if (cur_x > 0)
+    {
+        double plus_x = std::min (shift, cur_x);
+
+        image->shift_coordinates ({-plus_x, 0});
+    }
+}
+
+void page_down (Scrollable* image, double shift)
+{
+    auto scale = image->get_scale ();
+    auto cur = image->get_cur_start ();
+    auto cur_y = cur.y*scale.x;
+
+    auto real_size = image->get_full_size ();
+    auto size = image->get_size ();
+    auto max_y = real_size.y*scale.y - size.y;
+    if (cur_y < max_y)
+    {
+        double plus_y = std::min (shift, max_y - cur_y);
+
+        image->shift_coordinates ({0, plus_y});
+    }
+}
+
+void page_right (Scrollable* image, double shift)
+{
+    auto scale = image->get_scale ();
+    auto cur = image->get_cur_start ();
+    auto cur_x = cur.x*scale.x;
+
+    auto real_size = image->get_full_size ();
+    auto size = image->get_size ();
+    auto max_x = real_size.x*scale.x - size.x;
+    if (cur_x < max_x)
+    {
+        double plus_x = std::min (shift, max_x - cur_x);
+
+        image->shift_coordinates ({plus_x, 0});
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Realisation of Class View_port   //////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool View_port::process_event (Event* event) {
+    auto size = scrollable_image->get_full_size ();
+    auto scale = scrollable_image->get_scale ();
+
+    if (X_Y_BAR == kind_of_bar) {
+        bar[0].set_real_size ({size.x*scale.x, size.y*scale.y});
+        bar[1].set_real_size ({size.x*scale.x, size.y*scale.y});
+    }
+    bar[kind_of_bar].set_real_size ({size.x*scale.x, size.y*scale.y});
+
+    if (event->get_type () == SCROLL_EVENT) {
+        double shift = dynamic_cast<Scroll_event*> (event)->shift;
+        switch (dynamic_cast<Scroll_event*> (event)->direction)
+        {
+            case Scroll_event::UP:
+            {
+                page_up (scrollable_image, shift);
+                break;
+            }
+            case Scroll_event::DOWN:
+            {
+                page_down (scrollable_image, shift);
+                break;
+            }
+            case Scroll_event::RIGHT:
+            {
+                page_right (scrollable_image, shift);
+                break;
+            }
+            case Scroll_event::LEFT:
+            {
+                page_left (scrollable_image, shift);
+                break;
+            }
+        }
+        return true;
+    }
+
+    if (event->get_type () == BUTTON_CLICKED)
+    {
+        bool return1 = false;
+        if (kind_of_bar == X_Y_BAR)
+        {
+            return1 = bar[0].process_event (event);
+            bool return2 = bar[1].process_event (event);
+            if (return1 || return2)
+            {
+                return true;
+            }
+        } else
+        {
+            return1 = bar[kind_of_bar].process_event (event);
+        }
+        return return1;
+    }
+
+    if (event->get_type () == KEY_CLICKED)
+    {
+        auto key_event = dynamic_cast<Keybord_event*> (event);
+
+        auto scale = scrollable_image->get_scale ();
+
+        switch (key_event->key)
+        {
+            case ARROW_UP:
+            {
+                page_up (scrollable_image, 5.0 / scale.y);
+                bar[0].up_down (-5.0);
+                break;
+            }
+
+            case ARROW_DOWN:
+            {
+                page_down (scrollable_image, 5.0 / scale.y);
+                bar[0].up_down (5.0);
+                break;
+            }
+
+            case ARROW_RIGHT:
+            {
+                page_right (scrollable_image, 5.0 / scale.x);
+                bar[1].right_left (5.0);
+                break;
+            }
+
+            case ARROW_LEFT:
+            {
+                page_left (scrollable_image, 5.0 / scale.x);
+                bar[1].right_left (-5.0);
+                break;
+            }
+
+            case PAGE_UP:
+            {
+                if (!pressed && key_event->action == PRESSED) {
+                    pressed = true;
+                    page_up (scrollable_image, scrollable_image->get_size ().y / scale.y);
+                    bar[0].up_down (-scrollable_image->get_size ().y);
+                }
+
+                if (key_event->action == RELEASED) {
+                    pressed = false;
+                }
+
+                break;
+            }
+
+            case PAGE_DOWN:
+            {
+                if (!pressed && key_event->action == PRESSED) {
+                    pressed = true;
+                    page_down (scrollable_image, scrollable_image->get_size ().y / scale.y);
+                    bar[0].up_down (scrollable_image->get_size ().y);
+                }
+
+                if (key_event->action == RELEASED) {
+                    pressed = false;
+                }
+                break;
+            }
+
+            default:
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+void View_port::render ()
+{
+        if (kind_of_bar == X_Y_BAR)
+        {
+            bar[0].render ();
+            bar[1].render ();
+            return;
+        }
+        bar[kind_of_bar].render ();
+}
+
+View_port::View_port (Scrollable* image, Settings settings[2]):
+    scrollable_image (image),
+    bar    {{settings[0].left_button.x, settings[0].left_button.y,
+                    settings[0].button_size.x, settings[0].right_button.y - settings[0].left_button.y + settings[0].button_size.y,
+                    settings[0].scrl_settings.scroller_size.x, settings[0].scrl_settings.scroller_size.y, settings[0].scrl_settings.scroller_color,
+                    "scroll-bar-arrow-up.bmp", "scroll-bar-arrow-down.bmp",
+                    image->get_full_size (), image->get_size(), Y_BAR,
+                    settings[0].color},
+            {settings[1].left_button.x, settings[1].left_button.y,
+                    settings[1].right_button.x - settings[1].left_button.x + settings[1].button_size.x, settings[1].button_size.y,
+                    settings[1].scrl_settings.scroller_size.x, settings[1].scrl_settings.scroller_size.y, settings[1].scrl_settings.scroller_color,
+                    "scroll-bar-arrow-left.bmp", "scroll-bar-arrow-right.bmp",
+                    image->get_full_size (), image->get_size(), X_BAR,
+                    settings[1].color}},
+    bar_setting {settings[0], settings[1]}
+{ };
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class Window_with_scrollbar   //////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-void Window_with_scrollbar::page_up (double shift)
-{
-    if (cur_y > 0)
-    {
-        double plus_y = std::min (shift, cur_y);
-
-        change_coordinates ({0, -plus_y});
-        cur_y -= plus_y;
-    }
-}
-
-void Window_with_scrollbar::page_left (double shift)
-{
-    if (cur_x > 0)
-    {
-        double plus_x = std::min (shift, cur_x);
-
-        change_coordinates ({-plus_x, 0});
-        cur_x -= plus_x;
-    }
-}
-
-void Window_with_scrollbar::page_down (double shift)
-{
-    if (cur_y < max_y)
-    {
-        double plus_y = std::min (shift, max_y - cur_y);
-
-        change_coordinates ({0, plus_y});
-        cur_y += plus_y;
-    }
-}
-
-void Window_with_scrollbar::page_right (double shift)
-{
-    if (cur_x < max_x)
-    {
-        double plus_x = std::min (shift, max_x - cur_x);
-
-        change_coordinates ({plus_x, 0});
-        cur_x += plus_x;
-    }
-}
-
-
-Window_with_scrollbar::Window_with_scrollbar (const char* name, double init_width, double init_height, double init_real_width, double init_real_height, double init_x, double init_y):
-        Window (name, init_width, init_height, init_x, init_y, 0, 10, 30, init_width, init_height),
+#ifdef ARTEFACT
+Window_with_scrollbar::Window_with_scrollbar (const char* name, double init_width, double init_height, double init_real_width, double init_real_height, double init_x, double init_y, Point image_size, Point image_start):
+        Window (name, init_width, init_height, init_x, init_y, 0, 10, 30, init_width, init_height, image_size, image_start),
         bar    {{x + width - frame_width - 16,
                         y + frame_height,
                         16, height - 2*frame_height,
                         15, 20, {100, 100, 100},
-                        "scroll-bar-arrow-up.bmp", "scroll-bar-arrow-down.bmp", Y_BAR,
-                        {init_real_width, init_real_height},
+                        "scroll-bar-arrow-up.bmp", "scroll-bar-arrow-down.bmp",
+                        {init_real_width, init_real_height}, {init_width - 2*frame_width, init_height-2*frame_height}, Y_BAR,
                         {120, 120, 120}},
                 {x + frame_width,
                         y + height - frame_height - 16,
                         width - 2*frame_width, 16,
                         20, 15, {100, 100, 100},
-                        "scroll-bar-arrow-left.bmp", "scroll-bar-arrow-right.bmp", X_BAR,
-                        {init_real_width, init_real_height},
+                        "scroll-bar-arrow-left.bmp", "scroll-bar-arrow-right.bmp",
+                        {init_real_width, init_real_height}, {init_width - 2*frame_width, init_height-2*frame_height}, X_BAR,
                         {120, 120, 120}}},
         kind_of_bar (X_Y_BAR),
         max_x  (init_real_width - init_width + 2*0),
@@ -610,27 +826,26 @@ Window_with_scrollbar::Window_with_scrollbar   (const char* name,
                                                 Color bar_color,
                                                 double init_scroller_width,
                                                 double init_scroller_height,
-                                                Color init_scroller_color):
-            Window (name, init_width, init_height, init_x, init_y, init_frame_width, init_frame_height, button_width, init_width, init_height),
+                                                Color init_scroller_color,
+                                                Point image_size, Point image_start):
+            Window (name, init_width, init_height, init_x, init_y, init_frame_width, init_frame_height, button_width, init_width, init_height, image_size, image_start),
             bar    {{x + width - frame_width - bar_width,
                             y + frame_height,
                             bar_width, height - 2*frame_height,
                             init_scroller_width, init_scroller_height, init_scroller_color,
-                            button_up, button_down, Y_BAR,
-                            {init_real_width, init_real_height},
+                            button_up, button_down,
+                            {init_real_width, init_real_height}, {init_width - 2*frame_width, init_height-2*frame_height}, Y_BAR,
                             bar_color},
                     {x + frame_width,
                             y + height - frame_height - bar_width,
                             width - 2*frame_width, bar_width,
                             init_scroller_height, init_scroller_width, init_scroller_color,
-                            button_left, button_right, X_BAR,
-                            {init_real_width, init_real_height},
+                            button_left, button_right,
+                            {init_real_width, init_real_height}, {init_width - 2*frame_width, init_height-2*frame_height}, X_BAR,
                             bar_color}},
             kind_of_bar (init_kind_of_bar),
             max_x  (init_real_width - init_width + 2*init_frame_width),
-            max_y  (init_real_height - init_height + 2*init_frame_height),
-            cur_x  (0),
-            cur_y  (0)
+            max_y  (init_real_height - init_height + 2*init_frame_height)
     { }
 
 bool Window_with_scrollbar::contains_point (double mouse_x, double mouse_y)
@@ -676,22 +891,22 @@ bool Window_with_scrollbar::process_event (Event* event)
         {
             case Scroll_event::UP:
             {
-                page_up (shift);
+                page_up (get_image (), shift);
                 break;
             }
             case Scroll_event::DOWN:
             {
-                page_down (shift);
+                page_down (get_image(), shift);
                 break;
             }
             case Scroll_event::RIGHT:
             {
-                page_right (shift);
+                page_right (get_image(), shift);
                 break;
             }
             case Scroll_event::LEFT:
             {
-                page_left (shift);
+                page_left (get_image(), shift);
                 break;
             }
         }
@@ -723,28 +938,28 @@ bool Window_with_scrollbar::process_event (Event* event)
         {
             case ARROW_UP:
             {
-                page_up (5);
+                page_up (get_image(), 5);
                 bar[0].up_down (-5);
                 break;
             }
 
             case ARROW_DOWN:
             {
-                page_down (5);
+                page_down (get_image(), 5);
                 bar[0].up_down (5);
                 break;
             }
 
             case ARROW_RIGHT:
             {
-                page_right (5);
+                page_right (get_image(), 5);
                 bar[1].right_left (5);
                 break;
             }
 
             case ARROW_LEFT:
             {
-                page_left (5);
+                page_left (get_image(), 5);
                 bar[1].right_left (-5);
                 break;
             }
@@ -753,7 +968,7 @@ bool Window_with_scrollbar::process_event (Event* event)
             {
                 if (!pressed && key_event->action == PRESSED) {
                     pressed = true;
-                    page_up (height);
+                    page_up (get_image(), height);
                     bar[0].up_down (-height);
                 }
 
@@ -768,7 +983,7 @@ bool Window_with_scrollbar::process_event (Event* event)
             {
                 if (!pressed && key_event->action == PRESSED) {
                     pressed = true;
-                    page_down (height);
+                    page_down (get_image(), height);
                     bar[0].up_down (height);
                 }
 
@@ -792,7 +1007,7 @@ bool Window_with_scrollbar::process_event (Event* event)
 
 Window_with_scrollbar::~Window_with_scrollbar () { }
 
-
+#endif
 
 
 

@@ -6,6 +6,7 @@
 #define GRAPH_LIB_EVENT_HPP
 
 
+#include "basics.cpp"
 #include "abstract_classes.cpp"
 
 
@@ -16,20 +17,21 @@ enum keys
     ARROW_UP    = VK_UP,
     ARROW_DOWN  = VK_DOWN,
     ARROW_RIGHT = VK_RIGHT,
-    ARROW_LEFT  = VK_LEFT,
-    LEFT_UP = WM_LBUTTONUP
+    ARROW_LEFT  = VK_LEFT
 };
 
 
 enum event_type
 {
-    KEY_CLICKED    = 69,
-    BUTTON_CLICKED = 96,
-    BUTTON_PRESSED = 187,
-    CLOSE_WINDOW   = 59,
-    PROGRAM_CLOSE  = 89,
-    SCROLL_EVENT   = 84,
-    NO_EVENT       = 0
+    KEY_CLICKED     = 69,
+    BUTTON_CLICKED  = 96,
+    BUTTON_PRESSED  = 187,
+    CLOSE_WINDOW    = 59,
+    PROGRAM_CLOSE   = 89,
+    SCROLL_EVENT    = 84,
+    CANVAS_EVENT    = 70,
+    THICKNESS_EVENT = 71,
+    NO_EVENT        = 0
 };
 
 enum Type_of_action {
@@ -102,6 +104,31 @@ public:
     double shift;
     Scroll_event (type init_direction, double init_shift);
     virtual ~Scroll_event () = default;
+};
+
+class Canvas_event: public Event {
+public:
+    enum tools {
+        NO_TOOL = -1,
+        PENCIL = 0,
+        ERASER = 1,
+        THICKNESS = 2,
+        SHOW_THICKNESS = 3,
+        ZOOM = 4
+    };
+
+    tools tool;
+
+    Canvas_event (tools init_tool);
+    virtual ~Canvas_event () = default;
+};
+
+class Thickness_event: public Event {
+public:
+
+    int plus;
+    Thickness_event (int plus);
+    virtual ~Thickness_event () = default;
 };
 
 

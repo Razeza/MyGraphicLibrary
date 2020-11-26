@@ -1,31 +1,58 @@
-#include <iostream>
-#include <windows.h>
+#define SFML
+#include "graphic_library.cpp"
 
+#include "cnavas.cpp"
 
 
 double my_width  = GetSystemMetrics(SM_CXSCREEN);
 double my_height = GetSystemMetrics(SM_CYSCREEN);
 
-#include "basics.cpp"
-#include "tx_define.cpp"
-#include "graphic_library.cpp"
-
-
 int main ()
 {
-
-
     create_window (my_width, my_height);
-    Background back ({127, 35, 85}, my_width, my_height);
-    Window_with_scrollbar x ("my_love.bmp", 1000, 700, 2560, 1820, 100, 100);
+    Background back ({108, 122, 137, 255}, my_width, my_height);
 
-    Window_manager try_ ({&back, &x}, true);
+    int canvas_width = 1200,
+        canvas_height = 700;
+    Paint x ((my_width - canvas_width)/2, (my_height - canvas_height)/2, canvas_width, canvas_height);
+    // Paint x (my_width, my_height, "back.bmp");
+
+
+    View_port::Settings set1 = {
+            .button_size  = {16, 16},
+            .left_button  = {my_width - 16, 0},
+            .right_button = {my_width - 16, my_height - 16},
+            .color        = {100, 100, 100},
+            .scrl_settings = {
+                    .scroller_size = {15, 500},
+                    .scroller_color = {120, 120, 120}
+            }
+    };
+
+    View_port::Settings set2 = {
+            .button_size  = {16, 16},
+            .left_button  = {0, my_height - 16},
+            .right_button = {my_width - 16, my_height - 16},
+            .color        = {100, 100, 100},
+            .scrl_settings = {
+                    .scroller_size = {800, 15},
+                    .scroller_color = {120, 120, 120}
+            }
+    };
+
+
+    View_port::Settings set[] = {set1, set2};
+    View_port view (&x, set);
+    Window_manager try_ ({&back, &x, &view}, true);
+
     while (true)
     {
-        try_.manage_windows ();
+        if (Window_manager::CLOSE == try_.manage_windows ()) {
+            break;
+        }
         try_.render ();
         render_window ();
     }
 
-
 }
+

@@ -31,4 +31,6 @@ public:
     virtual ~Abstract_window () {};
 };
 
+
+
 #endif //GRAPH_LIB_ABSTRACT_WINDOW_HPP
