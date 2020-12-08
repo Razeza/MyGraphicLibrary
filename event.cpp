@@ -34,7 +34,7 @@ Mouse_button_event::Mouse_button_event (Point init_pos, Mouse_button init_button
         action (init_action)
 { }
 
-Keybord_event::Keybord_event (keys init_key, Type_of_action action):
+Keybord_event::Keybord_event (int init_key, Type_of_action action):
         Event (KEY_CLICKED),
         key   (init_key),
         action (action)
@@ -62,6 +62,32 @@ Thickness_event::Thickness_event (int plus) :
     plus (plus)
 { }
 
+Hue_event::Hue_event (float init_hue):
+        Event (HUE_CHANGED),
+        hue (init_hue)
+{ }
+
+Open_palette::Open_palette ():
+    Event (OPEN_PALETTE)
+{ }
+
+Changed_color::Changed_color (Color init_color):
+    Event (CHANGED_COLOR),
+    color (init_color)
+{ }
+
+Save_event::Save_event ():
+    Event (Canvas_event::SAVE)
+{ }
+
+Text_event::Text_event (char init_symbol):
+    Event (CHAR_ENTERED),
+    symbol (init_symbol)
+{ }
+
+Trash_event::Trash_event ():
+    Event (Canvas_event::TRASH)
+{ }
 
 #endif
 

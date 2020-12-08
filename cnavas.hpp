@@ -6,27 +6,72 @@
 
 
 #include "graphic_library.cpp"
+#include "input_box.cpp"
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class Canvas   /////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class Canvas: public Image, public Clickable, public Abstract_window {
+private:
+    ImageMemory memory;
+public:
+    Canvas (int x_screen, int y_screen, const std::string& file_name);
+    Canvas (int init_x, int init_y, double width, double height);
+
+
+    void set_pixel (int x, int y, Color color, int thickness = 1);
+    void operator() (int x, int y, Color color, int thickness = 1);
+
+    void set_pixel (int i, Color color, int thickness = 1);
+    void operator() (int i, Color color, int thickness = 1);
+
+    Color get_pixel (int x, int y);
+
+    int get_width ();
+    int get_height ();
+
+    void update ();
+
+    virtual bool contains_point (Point mouse) override;
+    virtual void hover () override;
+    virtual void render () override ;
+    virtual bool process_event (Event* event) override;
+    virtual bool clicked (double mouse_x, double mouse_y) override ;
+    virtual ~Canvas () override;
+
+    void memset (Color color);
+};
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Abstract_tool   //////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Abstract_tool {
+private:
+    int thickness = 11;
+    Color color = RED;
 public:
     virtual ~Abstract_tool () = 0;
-    virtual void process (Image* img, ImageMemory &memory, Mouse_button_event* event, Color color, Point shift, int i) = 0;
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) = 0;
+
+    void set_thickness (int init_thickness);
+    void set_color     (Color init_color);
+
+    int   get_thickness ();
+    Color get_color ();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class ToolManager   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "palette.cpp"
 
 class ToolManager: public Abstract_window, public Clickable {
 private:
 
-    static const int number_of_tools = 5;
-    static const int number_of_buttons = 5;
+    static const int number_of_tools = 8;
+    static const int number_of_buttons = 8;
 
     Point tool_size = {32, 32};
     Point space = {10, 5};
@@ -40,22 +85,28 @@ private:
     Abstract_window* buttons[number_of_buttons];
     Abstract_tool* tools[number_of_tools];
 
-    const int& thickness;
+    const Canvas_event::tools& cur_tool;
     Text thickness_text;
 public:
-    ToolManager (const int& init_thickness);
+    ToolManager (const Canvas_event::tools& init_thickness, Palitra::Palitra_settings settings);
 
     Abstract_tool* operator [] (Canvas_event::tools i) {
         return tools[i];
     }
 
+    Palitra* get_palette ();
+
     virtual void render ();
     virtual bool process_event (Event* event);
-    virtual bool contains_point (double mouse_x, double mouse_y) {};
+    virtual bool contains_point (Point mouse) {};
     virtual void hover () {};
     virtual bool clicked (double mouse_x, double mouse_y) {};
     virtual ~ToolManager ();
 };
+
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class Abstract_tool   //////////////////////////////////////////
@@ -82,7 +133,7 @@ public:
 
     virtual ~Pencil () = default;
     
-    virtual void process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness) override;
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override;
 };
 
 class Eraser: public Abstract_tool {
@@ -104,7 +155,7 @@ public:
 
     virtual ~Eraser () = default;
 
-    virtual void process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness) override;
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override;
 };
 
 class Change_thickness: public Abstract_tool {
@@ -136,7 +187,7 @@ public:
 
     virtual ~Change_thickness () = default;
 
-    virtual void process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness)
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness)
     { }
 };
 
@@ -156,39 +207,73 @@ public:
 
     virtual ~Zoom () = default;
 
-    virtual void process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness) override;
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override;
 };
 
-class Paint: public Image, public Clickable, public Abstract_window
+class Save: public Abstract_tool {
+private:
+    friend class ToolManager;
+
+    struct Save_action {
+        void operator () () {
+            add_event (new Save_event());
+        }
+    };
+public:
+    Save (Button<Save_action>* init_button);
+
+    Button<Save_action>* button;
+
+    virtual ~Save () = default;
+
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override {};
+};
+
+class Trash: public Abstract_tool {
+private:
+    friend class ToolManager;
+
+    struct Trash_action {
+        void operator () () {
+            add_event (new Trash_event());
+        }
+    };
+public:
+    Trash (Button<Trash_action>* init_button);
+
+    Button<Trash_action>* button;
+
+    virtual ~Trash () = default;
+
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override {};
+};
+
+
+class Paint: public Abstract_window // Rename фасад
 {
 private:
-    Color cur_color = RED;
-    int thickness = 10;
-
-    const int max_thickness = 50;
-
-    ImageMemory memory;
-    ToolManager tools_manager;
-
 
     Canvas_event::tools current_tool = Canvas_event::NO_TOOL;
+    const int max_thickness = 50;
 
-    int x;
-    int y;
+    Canvas canvas;
+    ToolManager tools_manager;
 
 
 
 public:
-    Paint (int x, int y, const std::string& file_name);
-    Paint (int x, int y, double width, double height);
+    Paint (int x_screen, int y_screen, const std::string& file_name, Palitra::Palitra_settings settings);
+    Paint (int init_x, int init_y, double width, double height, Palitra::Palitra_settings settings);
 
-    virtual bool contains_point (double mouse_x, double mouse_y) override;
-    virtual void hover () override;
+    Canvas& get_canvas ();
+
     virtual void render () override ;
     virtual bool process_event (Event* event) override;
-    virtual bool clicked (double mouse_x, double mouse_y) override ;
     virtual ~Paint () override;
+
+    Palitra* get_palette ();
 };
+
 
 
 

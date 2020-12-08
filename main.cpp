@@ -14,8 +14,17 @@ int main ()
 
     int canvas_width = 1200,
         canvas_height = 700;
-    Paint x ((my_width - canvas_width)/2, (my_height - canvas_height)/2, canvas_width, canvas_height);
-    // Paint x (my_width, my_height, "back.bmp");
+    Palitra::Palitra_settings settings = {
+            .line_thickness = 5,
+            .line_color = GRAY,
+            .square_coordinates = {25, 25},
+            .square_size = {370 + 360, 370 + 360},
+            .line_coordinates = {25, 760},
+            .line_size = {370 + 360, 60}
+    };
+
+    Paint x ((my_width - canvas_width)/2, (my_height - canvas_height)/2, canvas_width, canvas_height, settings);
+    // Paint x (my_width, my_height, "back.bmp", settings);
 
 
     View_port::Settings set1 = {
@@ -41,8 +50,10 @@ int main ()
     };
 
 
+
+
     View_port::Settings set[] = {set1, set2};
-    View_port view (&x, set);
+    View_port view (&(x.get_canvas ()), set);
     Window_manager try_ ({&back, &x, &view}, true);
 
     while (true)
@@ -51,6 +62,7 @@ int main ()
             break;
         }
         try_.render ();
+
         render_window ();
     }
 

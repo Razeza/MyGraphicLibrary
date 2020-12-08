@@ -4,6 +4,18 @@
 
 #include <cstdint>
 
+struct Point
+{
+    Point (double x, double y);
+
+    double x;
+    double y;
+
+    Point operator + (Point another);
+    Point operator - (Point another);
+    Point operator / (int div);
+};
+
 #define NO_COLOR {-2, -2, -2}
 struct Color
 {
@@ -11,6 +23,8 @@ struct Color
     int green;
     int blue;
     int alfa;
+
+    bool operator != (Color another);
 
     Color () = default;
     Color (int init_red, int init_green, int init_blue, int init_alfa = 255);
@@ -31,11 +45,7 @@ struct Color
 
 
 
-struct Point
-{
-    double x;
-    double y;
-};
+
 
 
 

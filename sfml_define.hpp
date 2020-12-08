@@ -13,6 +13,17 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
+enum keys
+{
+    PAGE_UP     = VK_PRIOR,
+    PAGE_DOWN   = VK_NEXT,
+    ARROW_UP    = VK_UP,
+    ARROW_DOWN  = VK_DOWN,
+    ARROW_RIGHT = VK_RIGHT,
+    ARROW_LEFT  = VK_LEFT,
+    ENTER       = VK_RETURN
+};
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Engine   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,6 +115,8 @@ public:
     Text () = default;
     Text (const std::string& init_str);
 
+    std::string get_str ();
+
     void set_character_size (int size);
     void set_color (Color color);
     void set_position (Point pos);
@@ -194,6 +207,8 @@ public:
     void change_coordinates (Point change);
 
     void change_size (Point new_size);
+
+    void save_image (const std::string& name);
 };
 
 Image load_image (const char* name, double width, double height);
@@ -216,6 +231,10 @@ public:
     void set_pixel (int i, Color color, int thickness = 1);
     void operator() (int i, Color color, int thickness = 1);
     void set_with_image (Image* img);
+
+    Color get_pixel (int x, int y);
+
+    void _memset (Color color);
 
     int get_width ();
     int get_height ();

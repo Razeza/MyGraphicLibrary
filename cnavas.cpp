@@ -14,35 +14,52 @@
 Abstract_tool::~Abstract_tool ()
 {}
 
-Paint::Paint (int init_x, int init_y, double width, double height) :
-    Image (nullptr, width, height),
-    memory  (width, height),
-    x (init_x),
-    y (init_y),
-    tools_manager (thickness)
+void Abstract_tool::set_thickness (int init_thickness)
 {
-    set_pos ({x, y});
+    thickness = init_thickness;
 }
+
+void Abstract_tool::set_color (Color init_color)
+{
+    color = init_color;
+}
+
+int Abstract_tool::get_thickness ()
+{
+    return thickness;
+}
+
+Color Abstract_tool::get_color ()
+{
+    return color;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class ToolManager   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ToolManager::ToolManager (const int& init_thickness):
+ToolManager::ToolManager (const Canvas_event::tools& init_tool, Palitra::Palitra_settings init_settings):
         buttons {new Button<Pencil::Pencil_action> (Pencil::Pencil_action(), "pencil.bmp", tool_size.x, tool_size.y, space.x, space.y),
                  new Button<Eraser::Eraser_action> (Eraser::Eraser_action(), "eraser.bmp", tool_size.x, tool_size.y, space.x*2 + tool_size.x, space.y),
                  new Button<Change_thickness::Change_thickness_action> (Change_thickness::Change_thickness_action(Change_thickness::Change_thickness_action::UP),
                                                                         "scroll-bar-arrow-up.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y),
                  new Button<Change_thickness::Change_thickness_action> (Change_thickness::Change_thickness_action(Change_thickness::Change_thickness_action::DOWN),
                                                                         "scroll-bar-arrow-down.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y + tool_size.y/2),
-                 new Button<Zoom::Zoom_action> (Zoom::Zoom_action (), "zoom.bmp", tool_size.x, tool_size.y, space.x*5 + tool_size.x*4, space.y)},
+                 new Button<Zoom::Zoom_action> (Zoom::Zoom_action (), "zoom.bmp", tool_size.x, tool_size.y, space.x*5 + tool_size.x*4, space.y),
+                 new Button<Palette::Palette_action> (Palette::Palette_action (), "palette.bmp", tool_size.x, tool_size.y, space.x*6 + tool_size.x*5, space.y),
+                 new Button<Trash::Trash_action> (Trash::Trash_action (), "trash.bmp", tool_size.x, tool_size.y, space.x*7 + tool_size.x*6, space.y),
+                 new Button<Save::Save_action> (Save::Save_action (), "save.bmp", tool_size.x, tool_size.y, space.x*8 + tool_size.x*7, space.y)},
         tools {new Pencil(dynamic_cast<Button<Pencil::Pencil_action>*> (buttons[0])),
                new Eraser(dynamic_cast<Button<Eraser::Eraser_action>*> (buttons[1])),
                new Change_thickness(dynamic_cast<Button<Change_thickness::Change_thickness_action>*> (buttons[2])),
                new Change_thickness(dynamic_cast<Button<Change_thickness::Change_thickness_action>*> (buttons[3])),
-               new Zoom (dynamic_cast<Button<Zoom::Zoom_action>*> (buttons[4]))},
-        thickness (init_thickness),
-        thickness_text (std::to_string (thickness))
+               new Zoom (dynamic_cast<Button<Zoom::Zoom_action>*> (buttons[4])),
+               new Palette (dynamic_cast<Button<Palette::Palette_action>*> (buttons[5]), init_settings),
+               new Trash (dynamic_cast<Button<Trash::Trash_action>*> (buttons[6])),
+               new Save (dynamic_cast<Button<Save::Save_action>*> (buttons[7]))},
+        cur_tool (init_tool),
+        thickness_text ()
 {
     load_font ("font.ttf");
     thickness_text.set_font ();
@@ -71,32 +88,48 @@ void ToolManager::render ()
     }
 
     draw_rectangle (space.x*3 + 2.5*tool_size.x, space.y, space.x*4 + 4*tool_size.x, space.y + tool_size.y, WHITE, 0);
-    thickness_text.set_str (std::to_string (thickness));
-    if (thickness < 10) {
-        thickness_text.set_position ({space.x*3 + 3*tool_size.x, 0});
-    } else {
-        thickness_text.set_position ({space.x*3 + 2.75*tool_size.x, 0});
+
+    if (cur_tool != Canvas_event::NO_TOOL && cur_tool != Canvas_event::ZOOM &&
+        cur_tool != Canvas_event::THICKNESS && cur_tool != Canvas_event::SHOW_THICKNESS)
+    {
+        auto thickness = tools[cur_tool]->get_thickness ();
+        thickness_text.set_str (std::to_string (thickness));
+        if (thickness < 10)
+        {
+            thickness_text.set_position ({space.x * 3 + 3 * tool_size.x, 0});
+        }
+        else
+        {
+            thickness_text.set_position ({space.x * 3 + 2.75 * tool_size.x, 0});
+        }
+        thickness_text.render ();
     }
-    thickness_text.render ();
+
+    dynamic_cast<Palette*> (tools[5])->render ();
 }
 
 bool ToolManager::process_event (Event* event)
 {
-    bool flag = false;
+    bool flag = dynamic_cast<Palette*> (tools[5])->process_event (event);
     for (auto& i : buttons) {
-        flag = i->process_event (event);
         if (flag) {
             return true;
         }
+        flag = i->process_event (event);
     }
 
     return flag;
 }
 
+Palitra* ToolManager::get_palette ()
+{
+    return dynamic_cast<Palette*> (tools[5])->get_palette ();
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Helper_function   /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void draw_line (ImageMemory& memory, Point last_pos, Point coordinates, Color color, int thickness) {
+void draw_line (Canvas& memory, Point last_pos, Point coordinates, Color color, int thickness) {
 
     int begin_x = std::min (static_cast<int>(coordinates.x), static_cast<int> (last_pos.x));
     int begin_y = std::min (static_cast<int>(coordinates.y), static_cast<int> (last_pos.y));
@@ -143,15 +176,16 @@ void draw_line (ImageMemory& memory, Point last_pos, Point coordinates, Color co
     }
 }
 
-void draw_pencil (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness, Point& last_pos) {
+void draw_pencil (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness, Point& last_pos) {
     Point coordinates = {event->pos.x - shift.x, event->pos.y - shift.y};
 
-    auto scale = img->get_scale ();
-    auto start = img->get_cur_start ();
-    auto pos = img->get_pos ();
+    auto scale = img.get_scale ();
+    auto start = img.get_cur_start ();
+    auto pos = img.get_pos ();
     Point start_zone = {start.x, start.y};
 
 
+    auto& memory = img;
     if (last_pos.x == -1)
     {
         coordinates = {coordinates.x / scale.x, coordinates.y / scale.y};
@@ -178,16 +212,16 @@ Pencil::Pencil (Button<Pencil_action>* init_button):
         button (init_button)
 { }
 
-void Pencil::process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness) {
-    draw_pencil (img, memory, event, color, shift, thickness, last_pos);
+void Pencil::process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) {
+    draw_pencil (img, event, color, shift, thickness, last_pos);
 }
 
 Eraser::Eraser (Button <Eraser_action>* init_button):
         button (init_button)
 { }
 
-void Eraser::process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness) {
-    draw_pencil (img, memory, event, WHITE, shift, thickness, last_pos);
+void Eraser::process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) {
+    draw_pencil (img, event, WHITE, shift, thickness, last_pos);
 }
 
 
@@ -199,17 +233,17 @@ Zoom::Zoom (Button <Zoom_action>* init_button):
         button (init_button)
 { }
 
-void Zoom::process (Image* img, ImageMemory& memory, Mouse_button_event* event, Color color, Point shift, int thickness)
+void Zoom::process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness)
 {
     if (event->action != Type_of_action::RELEASED) {
         return;
     }
 
-    if (!img->contains_point (event->pos)) {
+    if (!img.contains_point (event->pos)) {
         return;
     }
 
-    auto prev_scale = img->get_scale ();
+    auto prev_scale = img.get_scale ();
     double scale_up = 1.2;
     double scale_down = 0.8;
 
@@ -217,28 +251,28 @@ void Zoom::process (Image* img, ImageMemory& memory, Mouse_button_event* event, 
         if (scale_up*prev_scale.x > 13) {
             return;
         }
-        img->scale ({scale_up, scale_up});
+        img.scale ({scale_up, scale_up});
     } else {
 
         if (scale_down*prev_scale.x < 1) {
-            img->scale ({1/prev_scale.x, 1/prev_scale.y});
-            img->change_coordinates ({0, 0});
-            img->change_size (img->get_size ());
+            img.scale ({1/prev_scale.x, 1/prev_scale.y});
+            img.change_coordinates ({0, 0});
+            img.change_size (img.get_size ());
             return;
         }
-        img->scale ({scale_down, scale_down});
+        img.scale ({scale_down, scale_down});
     }
 
-    auto scale = img->get_scale ();
+    auto scale = img.get_scale ();
     double x = scale.x;
     double y = scale.y;
 
     auto [coor_x, coor_y] = event->pos;
-    auto [x_start, y_start] = img->get_cur_start ();
+    auto [x_start, y_start] = img.get_cur_start ();
 
-    auto [cur_x, cur_y] = img->get_pos ();
-    auto [shown_width, shown_height] = img->get_size ();
-    auto [picture_width, picture_height] = img->get_full_size ();
+    auto [cur_x, cur_y] = img.get_pos ();
+    auto [shown_width, shown_height] = img.get_size ();
+    auto [picture_width, picture_height] = img.get_full_size ();
 
     x_start = x_start + (coor_x - cur_x) *(1/prev_scale.x - 1/scale.x);
     y_start = y_start + (coor_y - cur_y) *(1/prev_scale.y - 1/scale.y);
@@ -271,41 +305,144 @@ void Zoom::process (Image* img, ImageMemory& memory, Mouse_button_event* event, 
         y = shown_height / y;
     }
 
-    img->change_coordinates ({x_start, y_start});
-    img->change_size ({x, y});
+    img.change_coordinates ({x_start, y_start});
+    img.change_size ({x, y});
 }
+
+Save::Save (Button <Save_action>* init_button):
+        button (init_button)
+{ }
+
+Trash::Trash (Button <Trash_action>* init_button):
+    button (init_button)
+{ }
+
+
+Canvas::~Canvas ()
+{ }
+
+bool Canvas::clicked (double mouse_x, double mouse_y)
+{
+    return false;
+}
+
+bool Canvas::process_event (Event* event)
+{
+    return false;
+}
+
+void Canvas::render ()
+{
+    Image::draw ();
+}
+
+bool Canvas::contains_point (Point mouse)
+{
+    auto [mouse_x, mouse_y] = mouse;
+    auto [x, y] = get_pos ();
+
+    return (mouse_x >= x && (x + get_size ().x > mouse_x) &&
+            mouse_y >= y && (y + get_size ().y > mouse_y));
+}
+
+void Canvas::hover ()
+{ }
+
+Canvas::Canvas (int x_screen, int y_screen, const std::string &file_name):
+    Image (file_name.c_str ()),
+    memory (get_size ().x, get_size ().y)
+{
+    set_pos ({static_cast<double>((x_screen - memory.get_width ())/2),
+              static_cast<double>((y_screen - memory.get_height ())/2)});
+    memory.set_with_image (this);
+}
+
+Canvas::Canvas (int init_x, int init_y, double width, double height):
+    Image (nullptr, width, height),
+    memory  (width, height)
+{
+    set_pos ({static_cast<double>(init_x),
+              static_cast<double>(init_y)});
+}
+
+void Canvas::update ()
+{
+    Image::update (memory);
+}
+
+void Canvas::set_pixel (int x, int y, Color color, int thickness)
+{
+    memory.set_pixel (x, y, color, thickness);
+}
+
+void Canvas::operator() (int x, int y, Color color, int thickness)
+{
+    memory.set_pixel (x, y, color, thickness);
+}
+
+int Canvas::get_width ()
+{
+    memory.get_width ();
+}
+
+int Canvas::get_height ()
+{
+    memory.get_height ();
+}
+
+void Canvas::set_pixel (int i, Color color, int thickness)
+{
+    memory.set_pixel (i, color, thickness);
+}
+
+void Canvas::operator() (int i, Color color, int thickness)
+{
+    memory.set_pixel (i, color, thickness);
+}
+
+Color Canvas::get_pixel (int x, int y)
+{
+    return memory.get_pixel (x, y);
+}
+
+void Canvas::memset (Color color)
+{
+    memory._memset (color);
+    update ();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Class Paint   //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Paint::Paint (int x_screen, int y_screen, const std::string &file_name):
-    Image (file_name.c_str()),
-    memory  (get_size ().x, get_size ().y),
-    x ((x_screen - memory.get_width ())/2),
-    y ((y_screen - memory.get_height ())/2),
-    tools_manager (thickness)
-{
-    set_pos ({x, y});
-    memory.set_with_image (this);
-}
+Paint::Paint (int init_x, int init_y, double width, double height, Palitra::Palitra_settings settings) :
+    canvas (init_x, init_y, width, height),
+    tools_manager (current_tool, settings)
+{ }
+
+Paint::Paint (int x_screen, int y_screen, const std::string &file_name, Palitra::Palitra_settings settings):
+    canvas  (x_screen, y_screen, file_name),
+    tools_manager (current_tool, settings)
+{ }
 
 void Paint::render ()
 {
-    Image::draw ();
+    canvas.render ();
     tools_manager.render ();
 }
 
 bool Paint::process_event (Event* event)
 {
-    if (event->get_type () == THICKNESS_EVENT) {
+    if (event->get_type () == THICKNESS_EVENT && current_tool != Canvas_event::NO_TOOL) {
         int plus = dynamic_cast<Thickness_event*> (event)->plus;
-        if (thickness + plus >= 1 && thickness + plus <= max_thickness)
-        {
-            thickness += plus;
+        auto thickness = tools_manager[current_tool]->get_thickness ();
+        if (thickness + plus >= 1 && thickness + plus <= max_thickness) {
+            tools_manager[current_tool]->set_thickness(thickness + plus);
         }
         return true;
     }
+
     if (event->get_type () == CANVAS_EVENT) {
         auto new_tool = dynamic_cast<Canvas_event*> (event)->tool;
         current_tool = (current_tool == new_tool ? Canvas_event::NO_TOOL : new_tool);
@@ -317,38 +454,53 @@ bool Paint::process_event (Event* event)
     }
 
     if (event->get_type () == BUTTON_CLICKED && current_tool != Canvas_event::NO_TOOL) {
-
         auto mouse_event = dynamic_cast<Mouse_button_event*> (event);
-        if (contains_point (mouse_event->pos.x, mouse_event->pos.y))
+        if (canvas.contains_point ({mouse_event->pos.x,
+                                    mouse_event->pos.y}))
         {
-            tools_manager[current_tool]->process (this, memory, mouse_event, cur_color, {x, y}, thickness);
-            update (memory);
+            auto cur_color = tools_manager[current_tool]->get_color ();
+            auto thickness = tools_manager[current_tool]->get_thickness ();
+
+            tools_manager[current_tool]->process (canvas, mouse_event, cur_color, canvas.get_pos (), thickness);
+            canvas.update ();
             return true;
         }
+
+        return tools_manager.process_event (event);
+    }
+
+    if (current_tool != Canvas_event::NO_TOOL && event->get_type () == CHANGED_COLOR) {
+        tools_manager[current_tool]->set_color (dynamic_cast<Changed_color*> (event)->color);
+        return true;
+    }
+
+    if (event->get_type () == Canvas_event::SAVE) {
+        canvas.save_image (Input_box::make_input ("Enter file name"));
+        return true;
+    }
+
+    if (event->get_type () == Canvas_event::TRASH) {
+        canvas.memset (WHITE);
+        return true;
     }
 
     return false;
 }
 
-bool Paint::clicked (double mouse_x, double mouse_y)
-{
-    return false;
-}
+
 
 Paint::~Paint ()
 { }
 
-bool Paint::contains_point (double mouse_x, double mouse_y)
+Canvas &Paint::get_canvas ()
 {
-    return (mouse_x >= x && (x + get_size ().x > mouse_x) &&
-            mouse_y >= y && (y + get_size ().y > mouse_y));
+    return canvas;
 }
 
-void Paint::hover ()
-{ }
-
-
-
+Palitra* Paint::get_palette ()
+{
+    return tools_manager.get_palette ();
+}
 
 
 

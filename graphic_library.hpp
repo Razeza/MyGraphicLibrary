@@ -66,7 +66,7 @@ public:
 class Hoverable
 {
 public:
-    virtual bool contains_point (double mouse_x, double mouse_y) = 0;
+    virtual bool contains_point (Point mouse) = 0;
     virtual void hover () = 0;
     virtual ~Hoverable () {};
 };
@@ -101,7 +101,7 @@ public:
     Button (Action action_init, const char* name, double init_width, double init_height, double x_init = 0, double y_init = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
     Button (Action action_init, Color color     , double init_width, double init_height, double x_init, double y_init, Color line_color = NO_COLOR, int thickness = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
 
-    virtual bool contains_point (double mouse_x, double mouse_y) override;
+    virtual bool contains_point (Point mouse) override;
     virtual void hover    () override;
     virtual bool clicked  (double mouse_x, double mouse_y) override;
     virtual void render   () override;
@@ -190,7 +190,7 @@ public:
             double init_real_height);
 
 
-    virtual bool contains_point (double mouse_x, double mouse_y) override;
+    virtual bool contains_point (Point mouse) override;
 
     virtual void hover    () override;
 
@@ -255,7 +255,7 @@ private:
 
         Color color;
 
-        bool contains_point (double mouse_x, double mouse_y);
+        bool contains_point (Point mouse);
 
         Scroller (double init_width, double init_height, double init_x, double init_y, Color init_color);
 
@@ -284,7 +284,7 @@ public:
               double init_scroller_width, double init_scroller_height, Color init_scroller_color,
               const char* button_up, const char* button_down, Point init_real_size, Point shown_size, char kind, Color color = {160, 160, 160});
 
-    virtual bool contains_point (double mouse_x, double mouse_y) override;
+    virtual bool contains_point (Point mouse) override;
 
     virtual void hover () override;
 
@@ -402,7 +402,7 @@ public:
                             Color init_scroller_color   = {255, 255, 255},
                             Point image_size = {200, 200}, Point image_start = {0, 0});
 
-    virtual bool contains_point (double mouse_x, double mouse_y) override;
+    virtual bool contains_point (Point mouse) override;
 
     virtual void hover () override;
 
@@ -433,6 +433,7 @@ struct Exit_functor
 
 void draw_connected_line (std::vector<Point> points, std::size_t size, Color color = {-1, -1, -1}, int line_thickness = 10);
 
+void draw_circled_rectangle (Point start, Point size, Color fill_color, Color line_color, int thickness);
 
 
 #endif //GRAPH_LIB_GRAPHIC_LIBRARY_H

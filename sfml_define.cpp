@@ -69,6 +69,11 @@ void init_key_pressed (const sf::Event& event, Type_of_action action) {
             i = ARROW_LEFT;
             break;
         }
+        case sf::Keyboard::Enter:
+        {
+            i = ENTER;
+            break;
+        }
     }
 
     add_event (new Keybord_event (static_cast<keys>(i), action));
@@ -76,7 +81,7 @@ void init_key_pressed (const sf::Event& event, Type_of_action action) {
 
 
 // const keys check[] = {PAGE_UP, PAGE_DOWN, ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT};
-const sf::Keyboard::Key check[] = {sf::Keyboard::PageUp, sf::Keyboard::PageDown, sf::Keyboard::Up, sf::Keyboard::Down, sf::Keyboard::Right, sf::Keyboard::Left};
+const sf::Keyboard::Key check[] = {sf::Keyboard::PageUp, sf::Keyboard::PageDown, sf::Keyboard::Up, sf::Keyboard::Down, sf::Keyboard::Right, sf::Keyboard::Left, sf::Keyboard::Enter};
 
 void store_events ()
 {
@@ -121,6 +126,11 @@ void store_events ()
                 xxx.pressed = false;
                 init_button_pressed (event, RELEASED);
                 break;
+            }
+
+            case sf::Event::TextEntered:
+            {
+                add_event (new Text_event (event.text.unicode));
             }
         }
     }
@@ -252,7 +262,7 @@ void draw_circle (double x0, double y0, double r, Color color, int line_thicknes
     }
 
     sf::CircleShape rect(r);
-    rect.setPosition(sf::Vector2f (x0 - xxx.thickness, y0 - xxx.thickness));
+    rect.setPosition(sf::Vector2f (x0 - xxx.thickness - r, y0 - xxx.thickness - r));
     rect.setFillColor(xxx.cur_fill_color);
     rect.setOutlineColor (xxx.cur_line_color);
     rect.setOutlineThickness (xxx.thickness);
@@ -310,6 +320,11 @@ void Text::set_str (const std::string& init_str)
 void Text::render ()
 {
     xxx.window.draw (str);
+}
+
+std::string Text::get_str ()
+{
+    return str.getString ();
 }
 
 
@@ -432,6 +447,14 @@ void Image::change_size (Point new_size)
     height = new_size.y;
 }
 
+void Image::save_image (const std::string &name)
+{
+    image = full_image.copyToImage ();
+    if (!image.saveToFile (name)) {
+        printf ("save is failed");
+    };
+}
+
 
 Image load_image (const char* name, double width, double height)
 {
@@ -510,7 +533,7 @@ void ImageMemory::set_pixel (int x, int y, Color color, int thickness)
     for (int k = std::max (y - thickness, 0); k <= std::min(y + thickness, height - 1); k++)
         for (int l = std::max(x - thickness, 0); l <= std::min(x + thickness, width - 1); l++)
         {
-            if (sqrt ((k - y)*(k - y) + (l - x)*(l - x)) < thickness)
+            if (((k - y)*(k - y) + (l - x)*(l - x)) < thickness)
             {
                 memory[4 * (k * width + l) + 0] = color.red;
                 memory[4 * (k * width + l) + 1] = color.green;
@@ -532,6 +555,22 @@ int ImageMemory::get_height ()
 
 void ImageMemory::set_with_image (Image* img) {
     memcpy ((sf::Uint8*) memory, img->data (), width*height*4);
+}
+
+Color ImageMemory::get_pixel (int x, int y)
+{
+    return {memory[4 * (y * width + x) + 0],
+            memory[4 * (y * width + x) + 1],
+            memory[4 * (y * width + x) + 2],
+            memory[4 * (y * width + x) + 3]};
+}
+
+void ImageMemory::_memset (Color color)
+{
+    for (std::size_t i = 0; i < height; i++)
+        for (std::size_t j = 0; j < width; j++) {
+            set_pixel (j, i, color);
+        }
 }
 
 

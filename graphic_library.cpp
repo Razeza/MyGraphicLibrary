@@ -139,8 +139,9 @@ Button<Action>::Button (Action action_init, Color color, double init_width, doub
 { }
 
 template<typename Action>
-bool Button<Action>::contains_point (double mouse_x, double mouse_y)
+bool Button<Action>::contains_point (Point mouse)
 {
+    auto [mouse_x, mouse_y] = mouse;
     if ((mouse_x >= x && mouse_x <= x + width) &&
         (mouse_y >= y && mouse_y <= y + height))
     {
@@ -152,7 +153,7 @@ bool Button<Action>::contains_point (double mouse_x, double mouse_y)
 template<typename Action>
 bool Button<Action>::clicked (double mouse_x, double mouse_y)
 {
-    if (contains_point (mouse_x, mouse_y))
+    if (contains_point ({mouse_x, mouse_y}))
     {
         action ();
         return true;
@@ -180,7 +181,7 @@ bool Button <Action>::process_event (Event* event)
 
         if (dynamic_cast<Mouse_button_event*> (event)->action == PRESSED &&
             dynamic_cast<Mouse_button_event*> (event)->button == button_to_press) {
-            if (contains_point (cur_coordinates.x, cur_coordinates.y))
+            if (contains_point ({cur_coordinates.x, cur_coordinates.y}))
             {
                 return true;
             }
@@ -252,8 +253,9 @@ Window::Window (Color color,
 { }
 
 
-bool Window::contains_point (double mouse_x, double mouse_y)
+bool Window::contains_point (Point mouse)
 {
+    auto [mouse_x, mouse_y] = mouse;
     if ((mouse_x >= x && mouse_x <= x + width) &&
             (mouse_y >= y && mouse_y <= y + height))
     {
@@ -366,8 +368,9 @@ void Scrollbar::Scroller::render ()
 bool Scrollbar::Scroller::process_event (Event* event)
 { }
 
-bool Scrollbar::Scroller::contains_point (double mouse_x, double mouse_y)
+bool Scrollbar::Scroller::contains_point (Point mouse)
 {
+    auto [mouse_x, mouse_y] = mouse;
     if ((mouse_x >= cur_x && mouse_x <= cur_x + width) &&
         (mouse_y >= cur_y && mouse_y <= cur_y + height))
     {
@@ -400,8 +403,9 @@ Scrollbar::Scrollbar(double init_x, double init_y, double init_width, double ini
             scroller  (init_scroller_width, init_scroller_height, kind == 0 ? init_x : init_x + init_height, kind == 0 ? init_y + init_width : init_y, init_scroller_color)
 { }
 
-bool Scrollbar::contains_point (double mouse_x, double mouse_y)
+bool Scrollbar::contains_point (Point mouse)
 {
+    auto [mouse_x, mouse_y] = mouse;
     if ((mouse_x >= x && mouse_x <= x + width) &&
             (mouse_y >= y && mouse_y <= y + height))
     {
@@ -437,7 +441,8 @@ bool Scrollbar::process_event (Event* event)
         return false;
     }
 
-    if (pressed || scroller.contains_point (dynamic_cast<Mouse_button_event*> (event)->pos.x, dynamic_cast<Mouse_button_event*> (event)->pos.y))
+    if (pressed || scroller.contains_point ({dynamic_cast<Mouse_button_event*> (event)->pos.x,
+                                             dynamic_cast<Mouse_button_event*> (event)->pos.y}))
     {
         pressed = true;
         auto new_y = dynamic_cast<Mouse_button_event*> (event)->pos.y;
@@ -480,7 +485,8 @@ bool Scrollbar::process_event (Event* event)
         return true;
     }
 
-    if (rect.contains_point (dynamic_cast<Mouse_button_event*> (event)->pos.x, dynamic_cast<Mouse_button_event*> (event)->pos.y))
+    if (rect.contains_point ({dynamic_cast<Mouse_button_event*> (event)->pos.x,
+                              dynamic_cast<Mouse_button_event*> (event)->pos.y}))
     {
         if (what == 0)
         {
@@ -848,8 +854,9 @@ Window_with_scrollbar::Window_with_scrollbar   (const char* name,
             max_y  (init_real_height - init_height + 2*init_frame_height)
     { }
 
-bool Window_with_scrollbar::contains_point (double mouse_x, double mouse_y)
+bool Window_with_scrollbar::contains_point (Point mouse)
 {
+    auto [mouse_x, mouse_y] = mouse;
     if ((mouse_x >= x && mouse_x <= x + width) &&
             (mouse_y >= y && mouse_y <= y + height))
     {
@@ -1033,5 +1040,23 @@ void draw_connected_line (std::vector<Point> points, std::size_t size, Color col
     }
 }
 
+void draw_circled_rectangle (Point start, Point size, Color fill_color, Color line_color, int thickness) {
+    draw_rectangle (start.x + thickness, start.y, // up
+                    start.x + thickness + size.x, start.y + thickness, line_color, 0);
+    draw_rectangle (start.x + thickness, start.y + thickness + size.y,// down
+                    start.x + thickness + size.x, start.y + 2*thickness + size.y, line_color, 0);
+    draw_rectangle (start.x, start.y + thickness, // left
+                    start.x + thickness, start.y + thickness + size.y, line_color, 0);
+    draw_rectangle (start.x + thickness + size.x, start.y + thickness, // right
+                    start.x + 2*thickness + size.x, start.y + thickness + size.y, line_color, 0);
+
+    draw_circle (start.x + thickness, start.y + thickness, thickness, line_color, 0);  // left up
+    draw_circle (start.x + thickness + size.x, start.y + thickness, thickness, line_color, 0); // right up
+    draw_circle (start.x + thickness, start.y + thickness + size.y, thickness, line_color, 0); //  left down
+    draw_circle (start.x + thickness + size.x, start.y + thickness + size.y, thickness, line_color, 0); // right down
+
+    draw_rectangle (start.x + thickness, start.y + thickness,
+                    start.x + thickness + size.x, start.y + thickness + size.y, fill_color, 0);
+}
 
 #endif // GRAPHIC_LIBRARY

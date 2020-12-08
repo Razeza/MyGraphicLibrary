@@ -10,27 +10,22 @@
 #include "abstract_classes.cpp"
 
 
-enum keys
-{
-    PAGE_UP     = VK_PRIOR,
-    PAGE_DOWN   = VK_NEXT,
-    ARROW_UP    = VK_UP,
-    ARROW_DOWN  = VK_DOWN,
-    ARROW_RIGHT = VK_RIGHT,
-    ARROW_LEFT  = VK_LEFT
-};
+
 
 
 enum event_type
 {
     KEY_CLICKED     = 69,
     BUTTON_CLICKED  = 96,
-    BUTTON_PRESSED  = 187,
     CLOSE_WINDOW    = 59,
     PROGRAM_CLOSE   = 89,
     SCROLL_EVENT    = 84,
     CANVAS_EVENT    = 70,
     THICKNESS_EVENT = 71,
+    HUE_CHANGED     = 72,
+    OPEN_PALETTE    = 73,
+    CHANGED_COLOR   = 74,
+    CHAR_ENTERED    = 75,
     NO_EVENT        = 0
 };
 
@@ -74,10 +69,10 @@ public:
 class Keybord_event: public Event
 {
 public:
-    keys key;
+    int key;
     Type_of_action action;
 
-    Keybord_event (keys key, Type_of_action action = PRESSED);
+    Keybord_event (int key, Type_of_action action = PRESSED);
     virtual ~Keybord_event () = default;
 };
 
@@ -114,7 +109,10 @@ public:
         ERASER = 1,
         THICKNESS = 2,
         SHOW_THICKNESS = 3,
-        ZOOM = 4
+        ZOOM = 4,
+        PALETTE = 5,
+        SAVE = 6,
+        TRASH = 7
     };
 
     tools tool;
@@ -131,5 +129,45 @@ public:
     virtual ~Thickness_event () = default;
 };
 
+class Hue_event: public Event {
+public:
+    float hue;
+    Hue_event (float init_hue);
+    virtual ~Hue_event () = default;
+};
+
+class Open_palette: public Event {
+public:
+    Open_palette ();
+    virtual ~Open_palette () = default;
+};
+
+class Changed_color: public Event {
+public:
+    Color color;
+
+    Changed_color (Color init_color);
+    virtual ~Changed_color () = default;
+};
+
+class Save_event: public Event {
+public:
+    Save_event ();
+    virtual ~Save_event () = default;
+};
+
+class Text_event: public Event {
+public:
+    char symbol;
+
+    Text_event (char init_char);
+    virtual ~Text_event () = default;
+};
+
+class Trash_event: public Event {
+public:
+    Trash_event ();
+    virtual ~Trash_event () = default;
+};
 
 #endif //GRAPH_LIB_EVENT_HPP
