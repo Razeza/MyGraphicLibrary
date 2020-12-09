@@ -7,7 +7,9 @@
 
 #include "graphic_library.cpp"
 #include "input_box.cpp"
-
+#include <dlfcn.h>
+#include <memory>
+#include <cstdio>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Canvas   /////////////////////////////////////////////////
@@ -40,6 +42,10 @@ public:
     virtual bool clicked (double mouse_x, double mouse_y) override ;
     virtual ~Canvas () override;
 
+    Point get_coordinates (Point x_y);
+
+    uint8_t* get_data ();
+
     void memset (Color color);
 };
 
@@ -66,6 +72,7 @@ public:
 ///////////////////////////////////////   Declaration of Class ToolManager   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "palette.cpp"
+#include "plugins/api.hpp"
 
 class ToolManager: public Abstract_window, public Clickable {
 private:
@@ -85,22 +92,33 @@ private:
     Abstract_window* buttons[number_of_buttons];
     Abstract_tool* tools[number_of_tools];
 
+    std::vector<Image*> plugin_buttons;
+    std::vector<PluginAPI::Plugin*> plugins;
+
+    PluginAPI::Plugin* cur_plugin = nullptr;
+
     const Canvas_event::tools& cur_tool;
     Text thickness_text;
+
+
+    const int init_thickness = 11;
+    const Color init_color = RED;
 public:
     ToolManager (const Canvas_event::tools& init_thickness, Palitra::Palitra_settings settings);
 
     Abstract_tool* operator [] (Canvas_event::tools i) {
         return tools[i];
     }
+    
+    void load_plugins (const std::vector<std::string>& path);
 
-    Palitra* get_palette ();
+    PluginAPI::Plugin* get_cur_plugin ();
 
     virtual void render ();
     virtual bool process_event (Event* event);
-    virtual bool contains_point (Point mouse) {};
+    virtual bool contains_point (Point mouse) {return false;};
     virtual void hover () {};
-    virtual bool clicked (double mouse_x, double mouse_y) {};
+    virtual bool clicked (double mouse_x, double mouse_y) {return false;};
     virtual ~ToolManager ();
 };
 
@@ -259,19 +277,19 @@ private:
     Canvas canvas;
     ToolManager tools_manager;
 
-
+    char plugin_used = false;
 
 public:
     Paint (int x_screen, int y_screen, const std::string& file_name, Palitra::Palitra_settings settings);
     Paint (int init_x, int init_y, double width, double height, Palitra::Palitra_settings settings);
 
     Canvas& get_canvas ();
+    
+    void load_plugins (const std::vector<std::string>& path);
 
     virtual void render () override ;
     virtual bool process_event (Event* event) override;
     virtual ~Paint () override;
-
-    Palitra* get_palette ();
 };
 
 

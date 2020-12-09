@@ -15,7 +15,7 @@ Point Background::get_size ()
 }
 
 Background::Background (const char* name, double init_width, double init_height, double init_x, double init_y):
-        back_img    (load_image (name, init_width, init_height)),
+        back_img    (name, {init_width, init_height}),
         color       (),
         x           (init_x),
         y           (init_y),
@@ -26,7 +26,7 @@ Background::Background (const char* name, double init_width, double init_height,
 }
 
 Background::Background (const char* name, double init_width, double init_height, double init_x, double init_y, double init_real_width, double init_real_height):
-        back_img    (load_image (name, init_width, init_height)),
+        back_img    (name, {init_width, init_height}),
         color       (),
         x           (init_x),
         y           (init_y),
@@ -323,15 +323,18 @@ bool Window_manager::process_event (Event* event)
     {
         auto it = std::find (windows.begin (), windows.end (), dynamic_cast<Close_window_event*> (event)->get_window ());
         windows.erase (it);
+        return true;
     }
 
     for (int i = windows.size () - 1; i >= 0; i--)
     {
         if (windows[i]->process_event (event))
         {
-            break;
+            return true;
         }
     }
+
+    return false;
 }
 
 void Window_manager::render ()
@@ -366,7 +369,7 @@ void Scrollbar::Scroller::render ()
 }
 
 bool Scrollbar::Scroller::process_event (Event* event)
-{ }
+{ return false; }
 
 bool Scrollbar::Scroller::contains_point (Point mouse)
 {
@@ -770,13 +773,13 @@ View_port::View_port (Scrollable* image, Settings settings[2]):
     bar    {{settings[0].left_button.x, settings[0].left_button.y,
                     settings[0].button_size.x, settings[0].right_button.y - settings[0].left_button.y + settings[0].button_size.y,
                     settings[0].scrl_settings.scroller_size.x, settings[0].scrl_settings.scroller_size.y, settings[0].scrl_settings.scroller_color,
-                    "scroll-bar-arrow-up.bmp", "scroll-bar-arrow-down.bmp",
+                    "graphic/scroll-bar-arrow-up.bmp", "graphic/scroll-bar-arrow-down.bmp",
                     image->get_full_size (), image->get_size(), Y_BAR,
                     settings[0].color},
             {settings[1].left_button.x, settings[1].left_button.y,
                     settings[1].right_button.x - settings[1].left_button.x + settings[1].button_size.x, settings[1].button_size.y,
                     settings[1].scrl_settings.scroller_size.x, settings[1].scrl_settings.scroller_size.y, settings[1].scrl_settings.scroller_color,
-                    "scroll-bar-arrow-left.bmp", "scroll-bar-arrow-right.bmp",
+                    "graphic/scroll-bar-arrow-left.bmp", "graphic/scroll-bar-arrow-right.bmp",
                     image->get_full_size (), image->get_size(), X_BAR,
                     settings[1].color}},
     bar_setting {settings[0], settings[1]}
@@ -794,14 +797,14 @@ Window_with_scrollbar::Window_with_scrollbar (const char* name, double init_widt
                         y + frame_height,
                         16, height - 2*frame_height,
                         15, 20, {100, 100, 100},
-                        "scroll-bar-arrow-up.bmp", "scroll-bar-arrow-down.bmp",
+                        "graphic/scroll-bar-arrow-up.bmp", "graphic/scroll-bar-arrow-down.bmp",
                         {init_real_width, init_real_height}, {init_width - 2*frame_width, init_height-2*frame_height}, Y_BAR,
                         {120, 120, 120}},
                 {x + frame_width,
                         y + height - frame_height - 16,
                         width - 2*frame_width, 16,
                         20, 15, {100, 100, 100},
-                        "scroll-bar-arrow-left.bmp", "scroll-bar-arrow-right.bmp",
+                        "graphic/scroll-bar-arrow-left.bmp", "graphic/scroll-bar-arrow-right.bmp",
                         {init_real_width, init_real_height}, {init_width - 2*frame_width, init_height-2*frame_height}, X_BAR,
                         {120, 120, 120}}},
         kind_of_bar (X_Y_BAR),

@@ -4,8 +4,8 @@
 #include "cnavas.cpp"
 
 
-double my_width  = GetSystemMetrics(SM_CXSCREEN);
-double my_height = GetSystemMetrics(SM_CYSCREEN);
+double my_width  = 1920;
+double my_height = 1080;
 
 int main ()
 {
@@ -23,9 +23,9 @@ int main ()
             .line_size = {370 + 360, 60}
     };
 
-    Paint x ((my_width - canvas_width)/2, (my_height - canvas_height)/2, canvas_width, canvas_height, settings);
-    // Paint x (my_width, my_height, "back.bmp", settings);
-
+    //Paint x ((my_width - canvas_width)/2, (my_height - canvas_height)/2, canvas_width, canvas_height, settings);
+    Paint x (my_width, my_height, "graphic/back.bmp", settings);
+    x.load_plugins({"ColorFilter"});
 
     View_port::Settings set1 = {
             .button_size  = {16, 16},

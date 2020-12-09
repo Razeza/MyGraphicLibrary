@@ -335,11 +335,11 @@ std::string Text::get_str ()
 
 
 
-Image::Image (const char* name, double init_width = 0, double init_height = 0, double x = 0, double y = 0):
-    width (init_width),
-    height (init_height),
-    x (x),
-    y (y),
+Image::Image (const char* name, Point size = {0, 0}, Point start = {0, 0}):
+    width (size.x),
+    height (size.y),
+    x (start.x),
+    y (start.y),
     shown_width (width),
     shown_height (height)
 {
@@ -424,7 +424,7 @@ bool Image::contains_point (Point pos)
             pos.y >= y && pos.y <= y + shown_height;
 }
 
-void Image::scale (Point scale)
+void Image::set_scale (Point scale)
 {
     drawable_image.scale (scale.x, scale.y);
 }
@@ -435,7 +435,7 @@ void Image::shift_coordinates (Point shift)
     y_shift += shift.y;
 }
 
-void Image::change_coordinates (Point change)
+void Image::set_shift (Point change)
 {
     x_shift = change.x;
     y_shift = change.y;
@@ -456,9 +456,9 @@ void Image::save_image (const std::string &name)
 }
 
 
-Image load_image (const char* name, double width, double height)
+Image load_image (const char* name, Point size)
 {
-    return Image (name, width, height);
+    return Image (name, size);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -571,6 +571,10 @@ void ImageMemory::_memset (Color color)
         for (std::size_t j = 0; j < width; j++) {
             set_pixel (j, i, color);
         }
+}
+
+uint8_t *ImageMemory::get_data() {
+    return memory;
 }
 
 

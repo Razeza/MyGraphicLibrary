@@ -161,7 +161,9 @@ bool Palitra::Hue_slider::process_event (Event* event)
         cur_pos = mouse_event->pos;
 
         add_event (new  Hue_event ((cur_pos.x - start.x) * 360 / width));
+        return true;
     }
+    return false;
 }
 
 Palitra::Hue_slider::Hue_slider (Point init_start, Point init_size, int init_width):

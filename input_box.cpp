@@ -31,7 +31,7 @@ Input_box::Input_box (const std::string& str_question, std::string& ans, Input_b
                2*(settings.size.y - 2*settings.letters_box_size.y)/3 + settings.letters_box_size.y + settings.start.y + settings.thickness,
                {100, 100, 100}, settings.letter_box_thickness)
 {
-    load_font ("font.ttf");
+    load_font ("graphic/font.ttf");
     answer.set_font ();
     answer.set_color (BLACK);
     answer.set_character_size (settings.letters_box_size.y - 2*settings.letter_box_thickness);

@@ -1,6 +1,3 @@
-#ifndef GRAPH_LIB_SFML_DEFINE_HPP
-#define GRAPH_LIB_SFML_DEFINE_HPP
-
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Drawable.hpp>
@@ -15,13 +12,13 @@
 
 enum keys
 {
-    PAGE_UP     = VK_PRIOR,
-    PAGE_DOWN   = VK_NEXT,
-    ARROW_UP    = VK_UP,
-    ARROW_DOWN  = VK_DOWN,
-    ARROW_RIGHT = VK_RIGHT,
-    ARROW_LEFT  = VK_LEFT,
-    ENTER       = VK_RETURN
+    PAGE_UP,
+    PAGE_DOWN,
+    ARROW_UP,
+    ARROW_DOWN,
+    ARROW_RIGHT,
+    ARROW_LEFT,
+    ENTER
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +42,7 @@ private:
     std::string         name_of_cur_font;
 
     std::queue<Event*> queue_of_events;
+
     friend void store_events  ();
     friend void set_fill_color(Color color);
     friend void set_line_color(Color color, int line_thickness);
@@ -163,7 +161,7 @@ public:
 
     virtual ~Image () {};
 
-    Image (const char* name, double width, double height, double x, double y);
+    Image (const char* name, Point size, Point start);
 
     const sf::Uint8* data ();
 private:
@@ -200,18 +198,18 @@ public:
     bool contains_point (Point pos);
 
     virtual Point get_scale () final;
-    void scale (Point scale);
+    void set_scale (Point scale);
 
     virtual void shift_coordinates (Point shift) final;
-
-    void change_coordinates (Point change);
+    void set_shift (Point change);
 
     void change_size (Point new_size);
 
     void save_image (const std::string& name);
 };
 
-Image load_image (const char* name, double width, double height);
+
+Image load_image (const char* name, Point size);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class ImageMemory   //////////////////////////////////////////////////
@@ -239,6 +237,9 @@ public:
     int get_width ();
     int get_height ();
 
+
+    uint8_t* get_data ();
+
     ~ImageMemory ();
 
     void set_pixel (int x, int y, Color color, int thickness = 1);
@@ -258,10 +259,3 @@ Point get_mouse_coordinates ();
 //         1 - if left button pressed
 //         2 - if right button pressed
 Mouse_button_event::Mouse_button is_clicked ();
-
-
-
-
-
-
-#endif

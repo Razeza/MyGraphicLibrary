@@ -4,6 +4,8 @@
 
 #include <cstdint>
 
+
+
 struct Point
 {
     Point (double x, double y);
@@ -43,7 +45,8 @@ struct Color
 #define BLACK  {0, 0,0}
 #define GRAY {128, 128, 128}
 
-
+uint32_t RGBA (uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+uint32_t RGBA (Color color);
 
 
 

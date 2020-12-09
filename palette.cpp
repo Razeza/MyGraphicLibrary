@@ -11,7 +11,7 @@ Palette::Palette (Button <Palette_action>* init_button, Palitra::Palitra_setting
         button (init_button),
         text ()
 {
-    load_font ("font.ttf");
+    load_font ("graphic/font.ttf");
     text.set_font ();
     text.set_color (palette.get_color ());
     text.set_character_size (20);

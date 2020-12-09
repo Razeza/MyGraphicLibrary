@@ -1,5 +1,3 @@
-#include <windows.h>
-#include <winuser.h>
 #include "event.cpp"
 #include "basics.cpp"
 #include <cstring>
@@ -17,6 +15,8 @@
 
 #ifdef TX_LIB
     #include "tx_define.cpp"
+    #include <windows.h>
+    #include <winuser.h>
 #endif
 
 #ifndef SFML

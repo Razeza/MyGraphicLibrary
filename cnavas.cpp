@@ -40,16 +40,16 @@ Color Abstract_tool::get_color ()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ToolManager::ToolManager (const Canvas_event::tools& init_tool, Palitra::Palitra_settings init_settings):
-        buttons {new Button<Pencil::Pencil_action> (Pencil::Pencil_action(), "pencil.bmp", tool_size.x, tool_size.y, space.x, space.y),
-                 new Button<Eraser::Eraser_action> (Eraser::Eraser_action(), "eraser.bmp", tool_size.x, tool_size.y, space.x*2 + tool_size.x, space.y),
+        buttons {new Button<Pencil::Pencil_action> (Pencil::Pencil_action(), "graphic/pencil.bmp", tool_size.x, tool_size.y, space.x, space.y),
+                 new Button<Eraser::Eraser_action> (Eraser::Eraser_action(), "graphic/eraser.bmp", tool_size.x, tool_size.y, space.x*2 + tool_size.x, space.y),
                  new Button<Change_thickness::Change_thickness_action> (Change_thickness::Change_thickness_action(Change_thickness::Change_thickness_action::UP),
-                                                                        "scroll-bar-arrow-up.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y),
+                                                                        "graphic/scroll-bar-arrow-up.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y),
                  new Button<Change_thickness::Change_thickness_action> (Change_thickness::Change_thickness_action(Change_thickness::Change_thickness_action::DOWN),
-                                                                        "scroll-bar-arrow-down.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y + tool_size.y/2),
-                 new Button<Zoom::Zoom_action> (Zoom::Zoom_action (), "zoom.bmp", tool_size.x, tool_size.y, space.x*5 + tool_size.x*4, space.y),
-                 new Button<Palette::Palette_action> (Palette::Palette_action (), "palette.bmp", tool_size.x, tool_size.y, space.x*6 + tool_size.x*5, space.y),
-                 new Button<Trash::Trash_action> (Trash::Trash_action (), "trash.bmp", tool_size.x, tool_size.y, space.x*7 + tool_size.x*6, space.y),
-                 new Button<Save::Save_action> (Save::Save_action (), "save.bmp", tool_size.x, tool_size.y, space.x*8 + tool_size.x*7, space.y)},
+                                                                        "graphic/scroll-bar-arrow-down.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y + tool_size.y/2),
+                 new Button<Zoom::Zoom_action> (Zoom::Zoom_action (), "graphic/zoom.bmp", tool_size.x, tool_size.y, space.x*5 + tool_size.x*4, space.y),
+                 new Button<Palette::Palette_action> (Palette::Palette_action (), "graphic/palette.bmp", tool_size.x, tool_size.y, space.x*6 + tool_size.x*5, space.y),
+                 new Button<Trash::Trash_action> (Trash::Trash_action (), "graphic/trash.bmp", tool_size.x, tool_size.y, space.x*7 + tool_size.x*6, space.y),
+                 new Button<Save::Save_action> (Save::Save_action (), "graphic/save.bmp", tool_size.x, tool_size.y, space.x*8 + tool_size.x*7, space.y)},
         tools {new Pencil(dynamic_cast<Button<Pencil::Pencil_action>*> (buttons[0])),
                new Eraser(dynamic_cast<Button<Eraser::Eraser_action>*> (buttons[1])),
                new Change_thickness(dynamic_cast<Button<Change_thickness::Change_thickness_action>*> (buttons[2])),
@@ -61,7 +61,7 @@ ToolManager::ToolManager (const Canvas_event::tools& init_tool, Palitra::Palitra
         cur_tool (init_tool),
         thickness_text ()
 {
-    load_font ("font.ttf");
+    load_font ("graphic/font.ttf");
     thickness_text.set_font ();
     thickness_text.set_color (ORANGE);
     thickness_text.set_character_size (tool_size.y);
@@ -76,11 +76,19 @@ ToolManager::~ToolManager ()
     for (auto& i : tools) {
         delete i;
     }
+
+    for (auto&i : plugin_buttons) {
+        delete i;
+    }
+
+    for (auto& i : plugins) {
+        i->deinit ();
+    }
 }
 
 void ToolManager::render ()
 {
-    draw_rectangle (start_point.x, start_point.y, tool_manager_size.x, tool_manager_size.y, manger_color, 0);
+    draw_rectangle (start_point.x, start_point.y, tool_manager_size.x, tool_manager_size.y*2, manger_color, 0);
 
 
     for (auto& i : buttons) {
@@ -105,12 +113,35 @@ void ToolManager::render ()
         thickness_text.render ();
     }
 
-    dynamic_cast<Palette*> (tools[5])->render ();
+    for (auto& i : plugin_buttons) {
+        i->draw ();
+    }
+
+    dynamic_cast<Palette*> (tools[Canvas_event::PALETTE])->render ();
 }
 
 bool ToolManager::process_event (Event* event)
 {
-    bool flag = dynamic_cast<Palette*> (tools[5])->process_event (event);
+    std::size_t size = plugins.size();
+
+    if (event->get_type () == BUTTON_CLICKED) {
+        for (std::size_t i = 0; i < size; i++) {
+            auto [x, y] = dynamic_cast<Mouse_button_event*> (event)->pos;
+            if (plugin_buttons[i]->contains_point({x, y})) {
+                if (dynamic_cast<Mouse_button_event*> (event)->action != Type_of_action::RELEASED) {
+                    continue;
+                }
+                if (cur_plugin == plugins[i]) {
+                    cur_plugin = nullptr;
+                } else {
+                    cur_plugin = plugins[i];
+                }
+                return true;
+            }
+        }
+    }
+
+    bool flag = dynamic_cast<Palette*> (tools[Canvas_event::PALETTE])->process_event (event);
     for (auto& i : buttons) {
         if (flag) {
             return true;
@@ -121,10 +152,46 @@ bool ToolManager::process_event (Event* event)
     return flag;
 }
 
-Palitra* ToolManager::get_palette ()
-{
-    return dynamic_cast<Palette*> (tools[5])->get_palette ();
+PluginAPI::Plugin* load_plugin (const char* str) {
+
+    void *handle = dlopen(str, RTLD_NOW);
+    if (nullptr == handle) {
+        printf("%s\n", dlerror());
+        exit (2);
+    }
+
+    PluginAPI::Plugin *(*get_plugin)() =
+    reinterpret_cast<PluginAPI::Plugin *(*)()>(dlsym(handle, "get_plugin"));
+
+    if (nullptr == get_plugin) {
+        printf("%s\n", dlerror());
+        dlclose(handle);
+        exit (3);
+    }
+
+    PluginAPI::Plugin *my_plugin = get_plugin();
+
+    my_plugin->init();
+
+    dlclose(handle);
+
+    return my_plugin;
 }
+
+
+void ToolManager::load_plugins (const std::vector<std::string>& path) {
+    for (auto& i : path) {
+        plugin_buttons.push_back (new Image (("plugins/" + i + "/icon.bmp").c_str(), tool_size, {space.x*(plugin_buttons.size() + 1) + tool_size.x*plugin_buttons.size(), tool_manager_size.y + space.y}));
+        plugins.push_back (load_plugin(("plugins/" + i + "/" + i + ".so").c_str()));
+        plugins.back()->properties[PluginAPI::Property::TYPE::PRIMARY_COLOR].int_value = RGBA (init_color);
+        plugins.back()->properties[PluginAPI::Property::TYPE::THICKNESS].int_value = init_thickness;
+    }
+}
+
+PluginAPI::Plugin* ToolManager::get_cur_plugin() {
+    return cur_plugin;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Helper_function   /////////////////////////////////////////////////////////////
@@ -251,16 +318,16 @@ void Zoom::process (Canvas& img, Mouse_button_event* event, Color color, Point s
         if (scale_up*prev_scale.x > 13) {
             return;
         }
-        img.scale ({scale_up, scale_up});
+        img.set_scale ({scale_up, scale_up});
     } else {
 
         if (scale_down*prev_scale.x < 1) {
-            img.scale ({1/prev_scale.x, 1/prev_scale.y});
-            img.change_coordinates ({0, 0});
+            img.set_scale ({1/prev_scale.x, 1/prev_scale.y});
+            img.set_shift ({0, 0});
             img.change_size (img.get_size ());
             return;
         }
-        img.scale ({scale_down, scale_down});
+        img.set_scale ({scale_down, scale_down});
     }
 
     auto scale = img.get_scale ();
@@ -305,7 +372,7 @@ void Zoom::process (Canvas& img, Mouse_button_event* event, Color color, Point s
         y = shown_height / y;
     }
 
-    img.change_coordinates ({x_start, y_start});
+    img.set_shift ({x_start, y_start});
     img.change_size ({x, y});
 }
 
@@ -358,7 +425,7 @@ Canvas::Canvas (int x_screen, int y_screen, const std::string &file_name):
 }
 
 Canvas::Canvas (int init_x, int init_y, double width, double height):
-    Image (nullptr, width, height),
+    Image (nullptr, {width, height}),
     memory  (width, height)
 {
     set_pos ({static_cast<double>(init_x),
@@ -382,12 +449,12 @@ void Canvas::operator() (int x, int y, Color color, int thickness)
 
 int Canvas::get_width ()
 {
-    memory.get_width ();
+    return memory.get_width ();
 }
 
 int Canvas::get_height ()
 {
-    memory.get_height ();
+    return memory.get_height ();
 }
 
 void Canvas::set_pixel (int i, Color color, int thickness)
@@ -409,6 +476,15 @@ void Canvas::memset (Color color)
 {
     memory._memset (color);
     update ();
+}
+
+Point Canvas::get_coordinates(Point x_y) {
+    auto scale = get_scale ();
+    return {(x_y.x - get_cur_start ().x) / scale.x, (x_y.y - get_cur_start ().y) / scale.y};;
+}
+
+uint8_t *Canvas::get_data() {
+    return memory.get_data();
 }
 
 
@@ -434,11 +510,27 @@ void Paint::render ()
 
 bool Paint::process_event (Event* event)
 {
-    if (event->get_type () == THICKNESS_EVENT && current_tool != Canvas_event::NO_TOOL) {
+    if (tools_manager.get_cur_plugin() != nullptr) {
+        current_tool = Canvas_event::NO_TOOL;
+    }
+
+    if (event->get_type () == THICKNESS_EVENT) {
         int plus = dynamic_cast<Thickness_event*> (event)->plus;
-        auto thickness = tools_manager[current_tool]->get_thickness ();
+        int thickness = 0;
+        if (current_tool != Canvas_event::NO_TOOL) {
+            thickness = tools_manager[current_tool]->get_thickness ();
+        }
+        if (tools_manager.get_cur_plugin() != nullptr) {
+            thickness = tools_manager.get_cur_plugin()->properties[PluginAPI::Property::TYPE::THICKNESS].int_value;
+        }
+
         if (thickness + plus >= 1 && thickness + plus <= max_thickness) {
-            tools_manager[current_tool]->set_thickness(thickness + plus);
+            if (current_tool != Canvas_event::NO_TOOL) {
+                tools_manager[current_tool]->set_thickness(thickness + plus);
+            }
+            if (tools_manager.get_cur_plugin() != nullptr) {
+                tools_manager.get_cur_plugin()->properties[PluginAPI::Property::TYPE::THICKNESS].int_value = thickness + plus;
+            }
         }
         return true;
     }
@@ -453,24 +545,60 @@ bool Paint::process_event (Event* event)
         return true;
     }
 
-    if (event->get_type () == BUTTON_CLICKED && current_tool != Canvas_event::NO_TOOL) {
+    if (event->get_type () == BUTTON_CLICKED) {
         auto mouse_event = dynamic_cast<Mouse_button_event*> (event);
-        if (canvas.contains_point ({mouse_event->pos.x,
-                                    mouse_event->pos.y}))
+        auto pos = mouse_event->pos;
+        if (canvas.contains_point (pos))
         {
-            auto cur_color = tools_manager[current_tool]->get_color ();
-            auto thickness = tools_manager[current_tool]->get_thickness ();
+            if (current_tool != Canvas_event::NO_TOOL) {
+                auto cur_color = tools_manager[current_tool]->get_color();
+                auto thickness = tools_manager[current_tool]->get_thickness();
 
-            tools_manager[current_tool]->process (canvas, mouse_event, cur_color, canvas.get_pos (), thickness);
-            canvas.update ();
+                tools_manager[current_tool]->process(canvas, mouse_event, cur_color, canvas.get_pos(), thickness);
+            }
+
+            auto cur_plugin = tools_manager.get_cur_plugin ();
+            if (cur_plugin != nullptr) {
+
+                auto new_pos = canvas.get_coordinates (pos);
+
+                if (mouse_event->action == Type_of_action::PRESSED && plugin_used == false) {
+                    cur_plugin->start_apply ({canvas.get_data(), static_cast<std::size_t>(canvas.get_height()),
+                                                                static_cast<std::size_t>(canvas.get_width())},
+                                                               {static_cast<int64_t> (new_pos.x),
+                                                                static_cast<int64_t> (new_pos.y)});
+                    plugin_used = true;
+                }
+
+                if (mouse_event->action == Type_of_action::RELEASED && plugin_used == true) {
+                    cur_plugin->stop_apply ({canvas.get_data(), static_cast<std::size_t>(canvas.get_height()),
+                                                                static_cast<std::size_t>(canvas.get_width())},
+                                                               {static_cast<int64_t> (new_pos.x),
+                                                                static_cast<int64_t> (new_pos.y)});
+                    plugin_used = false;
+                }
+
+                if (mouse_event->action == Type_of_action::PRESSED && plugin_used == true) {
+                    cur_plugin->apply({canvas.get_data(), static_cast<std::size_t>(canvas.get_height()),
+                                                          static_cast<std::size_t>(canvas.get_width())},
+                                                         {static_cast<int64_t> (new_pos.x),
+                                                          static_cast<int64_t> (new_pos.y)});
+                }
+            }
+            canvas.update();
             return true;
         }
-
-        return tools_manager.process_event (event);
     }
 
     if (current_tool != Canvas_event::NO_TOOL && event->get_type () == CHANGED_COLOR) {
         tools_manager[current_tool]->set_color (dynamic_cast<Changed_color*> (event)->color);
+        return true;
+    }
+
+    if (tools_manager.get_cur_plugin() != nullptr && event->get_type () == CHANGED_COLOR) {
+        auto new_color = dynamic_cast<Changed_color*> (event)->color;
+        std::cout << "Color changed" << std::endl;
+        tools_manager.get_cur_plugin()->properties[PluginAPI::Property::TYPE::PRIMARY_COLOR].int_value = RGBA (new_color);
         return true;
     }
 
@@ -492,14 +620,13 @@ bool Paint::process_event (Event* event)
 Paint::~Paint ()
 { }
 
+void Paint::load_plugins (const std::vector<std::string>& path) {
+    tools_manager.load_plugins (path);
+}
+
 Canvas &Paint::get_canvas ()
 {
     return canvas;
-}
-
-Palitra* Paint::get_palette ()
-{
-    return tools_manager.get_palette ();
 }
 
 
