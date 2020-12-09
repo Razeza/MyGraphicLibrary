@@ -9,7 +9,7 @@
 ///////////////////////////////////////   Realisation of Class Background   /////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Point Background::get_size ()
+Point Background::get_size () const
 {
     return back_img.get_size ();
 }
@@ -101,7 +101,7 @@ Image* Background::get_image ()
     return &back_img;
 }
 
-Point Background::get_start() {
+Point Background::get_start() const {
     return back_img.get_start();
 }
 
@@ -125,10 +125,10 @@ Button<Action>::Button (Action action_init, Color color, Point size, Point start
 { }
 
 template<typename Action>
-bool Button<Action>::contains_point (Point mouse)
+bool Button<Action>::contains_point (Point mouse) const
 {
     auto [mouse_x, mouse_y] = mouse;
-    auto [x, y] = get_start();
+    const auto [x, y] = get_start();
     auto [width, height] = get_size();
 
     if ((mouse_x >= x && mouse_x <= x + width) &&
@@ -229,7 +229,7 @@ Window::Window (Color color,
 { }
 
 
-bool Window::contains_point (Point mouse)
+bool Window::contains_point (Point mouse) const
 {
     auto [mouse_x, mouse_y] = mouse;
     auto [x, y] = get_start();
@@ -347,7 +347,7 @@ void Scrollbar::Scroller::render ()
 bool Scrollbar::Scroller::process_event (Event* event)
 { return false; }
 
-bool Scrollbar::Scroller::contains_point (Point mouse)
+bool Scrollbar::Scroller::contains_point (Point mouse) const
 {
     auto [mouse_x, mouse_y] = mouse;
     auto [cur_x, cur_y]     = cur_place;
@@ -382,7 +382,7 @@ Scrollbar::Scrollbar(Point _start, Point _size, Point scroller_size, Color init_
             scroller  (scroller_size, {kind == 0 ? start.x : start.x + size.y, kind == 0 ? start.y + size.x : start.y}, init_scroller_color)
 { }
 
-bool Scrollbar::contains_point (Point mouse)
+bool Scrollbar::contains_point (Point mouse) const
 {
     auto [mouse_x, mouse_y] = mouse;
     auto [x, y]             = start;

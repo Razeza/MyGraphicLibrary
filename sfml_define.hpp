@@ -22,7 +22,7 @@ enum keys
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Declaration of Class Engine   ////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class Engine   /////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Engine
@@ -43,15 +43,18 @@ private:
 
     std::queue<Event*> queue_of_events;
 
-    friend void store_events  ();
-    friend void set_fill_color(Color color);
-    friend void set_line_color(Color color, int line_thickness);
-    friend void create_window (Point size);
-    friend void render_window ();
-    friend bool load_font     (const char* name);
-    friend void add_event     (Event* new_event);
-    friend Event* get_event   ();
-    friend bool empty_queue   ();
+
+    // Почему-то я решил не делать статические методы, пожтому так,
+    // хотел ,чтобы доступ к движку пользователь не имел
+    friend void store_events   ();
+    friend void set_fill_color (Color color);
+    friend void set_line_color (Color color, int line_thickness);
+    friend void create_window  (Point size);
+    friend void render_window  ();
+    friend bool load_font      (const char* name);
+    friend void add_event      (Event* new_event);
+    friend Event* get_event    ();
+    friend bool empty_queue    ();
     friend void draw_line               (Point start, Point end, Color color, int line_thickness);
     friend void draw_rectangle          (Point start, Point end, Color color, int line_thickness);
     friend void draw_circle             (Point start, double r,  Color color, int line_thickness);
@@ -75,16 +78,16 @@ private:
 
 Mouse_button_event::Mouse_button init_button_pressed (const sf::Event& event, Type_of_action action);
 void init_key_pressed (const sf::Event& event, Type_of_action action);
-void store_events ();
-void add_event    (Event* new_event);
-Event* get_event   ();
-bool empty_queue ();
+void store_events     ();
+void add_event        (Event* new_event);
+Event* get_event      ();
+bool empty_queue      ();
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Window Functions   /////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void create_window (double size_x, double size_y);
+void create_window (Point size);
 void render_window ();
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +114,7 @@ public:
     Text () = default;
     Text (const std::string& init_str);
 
-    std::string get_str ();
+    std::string get_str () const;
 
     void set_character_size (int size);
     void set_color (Color color);
@@ -130,11 +133,13 @@ bool load_font (const char* name);
 
 class Scrollable {
 public:
-    virtual Point get_full_size () = 0;
-    virtual Point get_size ()  = 0;
-    virtual Point get_cur_start  () = 0;
+    virtual Point get_full_size () const = 0;
+    virtual Point get_size      ()  const = 0;
+    virtual Point get_cur_start () const = 0;
+
     virtual void shift_coordinates (Point) = 0;
-    virtual Point get_scale () = 0;
+
+    virtual Point get_scale () const = 0;
     virtual ~Scrollable () = 0;
 };
 
@@ -142,11 +147,12 @@ Scrollable::~Scrollable ()
 { }
 
 
-class ImageMemory;
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Image   //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class ImageMemory;
 
 struct Image: public Scrollable
 {
@@ -178,21 +184,20 @@ public:
 
     void update    (ImageMemory& memory);
     void draw      ();
-    bool exist     ();
+    bool exist     () const;
 
     void set_pos (Point pos);
 
-    virtual Point get_size () final;
-    virtual Point get_full_size () final;
-    virtual Point get_cur_start  () final;
+    virtual Point get_size      () const final;
+    virtual Point get_full_size () const final;
+    virtual Point get_cur_start () const final;
 
-    Point get_start ();
+    Point get_start () const;
+    Point get_pos   () const;
 
-    Point get_pos ();
+    bool contains_point (Point pos) const;
 
-    bool contains_point (Point pos);
-
-    virtual Point get_scale () final;
+    virtual Point get_scale () const final;
     void set_scale (Point scale);
 
     virtual void shift_coordinates (Point shift) final;
@@ -207,7 +212,7 @@ public:
 Image load_image (const char* name, Point size);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Declaration of Class ImageMemory   //////////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class ImageMemory   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -225,12 +230,11 @@ public:
     void operator() (int i, Color color, int thickness = 1);
     void set_with_image (Image* img);
 
-    Color get_pixel (int x, int y);
+    Color get_pixel (int x, int y) const;
 
     void _memset (Color color);
 
-    int get_width ();
-    int get_height ();
+    Point get_size () const;
 
 
     uint8_t* get_data ();

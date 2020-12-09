@@ -6,20 +6,23 @@
 
 #include "lib_palitra.hpp"
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Realisation of Class Palitra   ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Palitra::Palitra (Palitra::Palitra_settings init_settings):
     settings (init_settings),
-    square (settings.square_coordinates.x + settings.line_thickness,
-            settings.square_coordinates.y + settings.line_thickness,
-            settings.square_size.x - 2*settings.line_thickness,
-            settings.square_size.y - 2*settings.line_thickness),
-    line (settings.line_coordinates.x + settings.line_thickness,
-          settings.line_coordinates.y + settings.line_thickness,
-          settings.line_size.x - 2*settings.line_thickness,
-          settings.line_size.y - 2*settings.line_thickness),
-    cur_point ({square.get_pos ().x, square.get_pos ().y + square.get_height () - std::min (settings.line_thickness, 6)}),
-    slider (settings.line_coordinates + Point(settings.line_thickness, 0),
-            {5, settings.line_size.y}, line.get_width ())
+    square   (settings.square_coordinates.x + settings.line_thickness,
+              settings.square_coordinates.y + settings.line_thickness,
+              settings.square_size.x - 2*settings.line_thickness,
+              settings.square_size.y - 2*settings.line_thickness),
+    line     (settings.line_coordinates.x + settings.line_thickness,
+              settings.line_coordinates.y + settings.line_thickness,
+              settings.line_size.x - 2*settings.line_thickness,
+              settings.line_size.y - 2*settings.line_thickness),
+    cur_point ({square.get_pos ().x, square.get_pos ().y + square.get_size().y - std::min (settings.line_thickness, 6)}),
+    slider    (settings.line_coordinates + Point(settings.line_thickness, 0),
+              {5, settings.line_size.y}, line.get_size().x)
 {
     set_line ();
     set_square ();
@@ -58,12 +61,13 @@ void Palitra::set_line ()
                            static_cast<int>(g * 255),
                            static_cast<int>(b * 255)};
 
-        for (std::size_t j = cur_x; j < cur_x + line.get_width () / 360; j++) {
-            for (int k = 0; k < line.get_height (); k++) {
+        auto [width, height] = line.get_size();
+        for (std::size_t j = cur_x; j < cur_x + width / 360; j++) {
+            for (int k = 0; k < height; k++) {
                 line.set_pixel (j, k, cur_color);
             }
         }
-        cur_x += (line.get_width () + 1) / 360;
+        cur_x += (width + 1) / 360;
     }
     line.update ();
 }
@@ -78,8 +82,7 @@ void Palitra::set_square ()
     float s = 1;
     float v = 1;
 
-    auto width = square.get_width ();
-    auto height = square.get_height ();
+    auto [width, height] = square.get_size();
 
     for (int x = 0; x < width; ++x) {
         for (int y = 0; y < width; ++y) {
@@ -98,49 +101,66 @@ void Palitra::set_square ()
 
 bool Palitra::process_event (Event* event)
 {
-    if (event->get_type () == BUTTON_CLICKED) {
-        auto x_y = dynamic_cast<Mouse_button_event*> (event)->pos;
-        if (square.contains_point (x_y))
+    switch (event->get_type ()) {
+        case BUTTON_CLICKED:
         {
-            cur_point = x_y;
-
-            cur_color = square.get_pixel (x_y.x - square.get_pos ().x,
-                                          x_y.y - square.get_pos ().y);
-
-            if (dynamic_cast<Mouse_button_event*> (event)->action == Type_of_action::RELEASED) {
-                add_event (new Changed_color (cur_color));
-            }
-            return true;
+            return process_button_event(event);
         }
-
-        if (line.contains_point (x_y)) {
-            return slider.process_event (event);
+        case HUE_CHANGED:
+        {
+            return process_hue_event(event);
+        }
+        default:
+        {
+            return false;
         }
     }
-
-    if (event->get_type () == HUE_CHANGED) {
-        cur_hue = dynamic_cast<Hue_event*> (event)->hue;
-        cur_color = square.get_pixel (cur_point.x - square.get_pos ().x,
-                                      cur_point.y - square.get_pos ().y);
-        set_square ();
-        add_event (new Changed_color (cur_color));
-    }
-    return false;
 }
 
-Color Palitra::get_color ()
+Color Palitra::get_color () const
 {
     return cur_color;
 }
 
-bool Palitra::contains_point (Point x_y)
+bool Palitra::contains_point (Point x_y) const
 {
     return line.contains_point (x_y) || square.contains_point (x_y);
 }
 
-int Palitra::get_line_thickness ()
+int Palitra::get_line_thickness () const
 {
     return settings.line_thickness;
+}
+
+bool Palitra::process_button_event(Event *event) {
+    auto x_y = dynamic_cast<Mouse_button_event*> (event)->pos;
+    if (square.contains_point (x_y))
+    {
+        cur_point = x_y;
+
+        cur_color = square.get_pixel (x_y.x - square.get_pos ().x,
+                                      x_y.y - square.get_pos ().y);
+
+        if (dynamic_cast<Mouse_button_event*> (event)->action == Type_of_action::RELEASED) {
+            add_event (new Changed_color (cur_color));
+        }
+        return true;
+    }
+
+    if (line.contains_point (x_y)) {
+        return slider.process_event (event);
+    }
+
+    return false;
+}
+
+bool Palitra::process_hue_event(Event *event) {
+    cur_hue = dynamic_cast<Hue_event*> (event)->hue;
+    cur_color = square.get_pixel (cur_point.x - square.get_pos ().x,
+                                  cur_point.y - square.get_pos ().y);
+    set_square ();
+    add_event (new Changed_color (cur_color));
+    return true;
 }
 
 void Palitra::Hue_slider::render ()

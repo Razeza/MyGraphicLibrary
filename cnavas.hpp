@@ -30,15 +30,14 @@ public:
 
     Color get_pixel (int x, int y);
 
-    int get_width ();
-    int get_height ();
+    Point get_canvas_size () const;
 
 
 
     void update ();
 
-    virtual bool contains_point (Point mouse) override;
-    virtual void hover () override;
+    virtual bool contains_point (Point mouse) const override;
+    virtual void hover  () override;
     virtual void render () override ;
     virtual bool process_event (Event* event) override;
     virtual bool clicked (double mouse_x, double mouse_y) override ;
@@ -118,8 +117,8 @@ public:
 
     virtual void render ();
     virtual bool process_event (Event* event);
-    virtual bool contains_point (Point mouse) {return false;};
-    virtual void hover () {};
+    virtual bool contains_point (Point mouse) const {return false;};
+    virtual void hover () { };
     virtual bool clicked (double mouse_x, double mouse_y) {return false;};
     virtual ~ToolManager ();
 };
@@ -236,7 +235,7 @@ private:
 
     struct Save_action {
         void operator () () {
-            add_event (new Save_event());
+            add_event (new Canvas_event (Canvas_event::SAVE));
         }
     };
 public:
@@ -255,7 +254,7 @@ private:
 
     struct Trash_action {
         void operator () () {
-            add_event (new Trash_event());
+            add_event (new Canvas_event (Canvas_event::TRASH));
         }
     };
 public:

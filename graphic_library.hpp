@@ -25,7 +25,7 @@ protected:
 
     Point real_size;
 
-    Point get_size ();
+    Point get_size () const;
 
 public:
     Background () = default;
@@ -35,7 +35,7 @@ public:
     Background (Color init_color, Point size, Point start, Point real_size, Color line_color = NO_COLOR, int thickness = 0);
 
     void change_coordinates (Point shift);
-    Point get_start ();
+    Point get_start () const;
 
     Image* get_image ();
 
@@ -58,8 +58,8 @@ public:
 class Hoverable
 {
 public:
-    virtual bool contains_point (Point mouse) = 0;
-    virtual void hover () = 0;
+    virtual bool contains_point (Point mouse) const = 0;
+    virtual void hover ()= 0;
     virtual ~Hoverable () {};
 };
 
@@ -93,7 +93,7 @@ public:
     Button (Action action_init, const char* name, Point size, Point start = {0, 0}, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
     Button (Action action_init, Color color     , Point size, Point start = {0, 0}, Color line_color = NO_COLOR, int thickness = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
 
-    virtual bool contains_point (Point mouse) override;
+    virtual bool contains_point (Point mouse) const override;
     virtual void hover    () override;
     virtual bool clicked  (double mouse_x, double mouse_y) override;
     virtual void render   () override;
@@ -173,7 +173,7 @@ public:
             Point real_size);
 
 
-    virtual bool contains_point (Point mouse) override;
+    virtual bool contains_point (Point mouse) const override;
 
     virtual void hover    () override;
 
@@ -232,7 +232,7 @@ private:
 
         Color color;
 
-        bool contains_point (Point mouse);
+        bool contains_point (Point mouse) const;
 
         Scroller (Point size, Point start, Color init_color);
 
@@ -262,7 +262,7 @@ public:
               const char* button_up, const char* button_down,
               Point init_real_size, Point shown_size, char kind, Color color = {160, 160, 160});
 
-    virtual bool contains_point (Point mouse) override;
+    virtual bool contains_point (Point mouse) const override;
 
     virtual void hover () override;
 
@@ -328,71 +328,6 @@ public:
 
     View_port (Scrollable* image, Settings settings[2]);
 };
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Declaration of Class Window_with_scrollbar   //////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef ARTEFACT
-class Window_with_scrollbar: public Window
-{
-private:
-    Scrollbar bar[2];
-    char kind_of_bar;
-
-    double max_x;
-    double max_y;
-    double cur_x;
-    double cur_y;
-
-    bool pressed = false;
-
-public:
-
-    Window_with_scrollbar  (const char* name,
-                            double init_width,
-                            double init_height,
-                            double init_real_width,         // real size of image
-                            double init_real_height,        // real size of image
-                            double init_x,
-                            double init_y,
-                            Point image_size, Point image_start);
-
-    Window_with_scrollbar  (const char* name,
-                            double init_width,
-                            double init_height,
-                            double init_real_width,         // real size of image
-                            double init_real_height,        // real size of image
-                            double init_x,
-                            double init_y,
-                            double init_frame_width,
-                            double init_frame_height,
-                            double button_width,
-                            double bar_width,
-                            const char* button_up,
-                            const char* button_down,
-                            char  init_kind_of_bar,
-                            const char* button_left  = nullptr,
-                            const char* button_right = nullptr,
-                            Color bar_color = {160, 160, 160},
-                            double init_scroller_width = 0,
-                            double init_scroller_height = 0,
-                            Color init_scroller_color   = {255, 255, 255},
-                            Point image_size = {200, 200}, Point image_start = {0, 0});
-
-    virtual bool contains_point (Point mouse) override;
-
-    virtual void hover () override;
-
-    virtual bool clicked  (double mouse_x, double mouse_y) override;
-
-    virtual void render () override;
-
-    virtual bool process_event (Event* event) override;
-
-    virtual ~Window_with_scrollbar ();
-};
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Exit_functor   /////////////////////////////////////////////////

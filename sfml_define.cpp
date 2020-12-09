@@ -2,9 +2,8 @@
 #define SFML_CPP
 
 #include <cmath>
+#include <iostream>
 #include "sfml_define.hpp"
-
-
 
 Engine::Engine (): cur_font (), name_of_cur_font ()
 {}
@@ -22,11 +21,12 @@ Mouse_button_event::Mouse_button init_button_pressed (const sf::Event& event, Ty
     Mouse_button_event::Mouse_button mouse_event = Mouse_button_event::MIDDLE_BUTTON;
     Point coordinates = {static_cast<double>(event.mouseButton.x),
                          static_cast<double>(event.mouseButton.y)};
+
     if (event.mouseButton.button == sf::Mouse::Right) {
         mouse_event = Mouse_button_event::RIGHT_BUTTON;
     } else if (event.mouseButton.button == sf::Mouse::Left) {
             mouse_event = Mouse_button_event::LEFT_BUTTON;
-        }
+    }
 
     if (mouse_event != Mouse_button_event::MIDDLE_BUTTON) {
         add_event (new Mouse_button_event (coordinates, mouse_event, action));
@@ -73,6 +73,10 @@ void init_key_pressed (const sf::Event& event, Type_of_action action) {
         {
             i = ENTER;
             break;
+        }
+        default:
+        {
+            std::cout << "Unkown key";
         }
     }
 
@@ -156,6 +160,7 @@ bool empty_queue ()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Window Functions   //////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void create_window (Point size)
 {
     xxx.window.create (sf::VideoMode(size.x, size.y), "App");
@@ -217,9 +222,12 @@ void draw_line (Point start, Point end, Color color, int line_thickness)
     }
 
     sf::RectangleShape line (sf::Vector2f(end.x - start.x, end.y - start.y));
+
     line.setFillColor (xxx.cur_fill_color);
+
     line.move (start.x, start.y);
     line.rotate (atan ((end.x - start.x) / (end.y - start.y)));
+
     xxx.window.draw (line);
 }
 
@@ -231,10 +239,13 @@ void draw_rectangle (Point start, Point end, Color color, int line_thickness)
     }
 
     sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(end.x - start.x - 2*xxx.thickness, end.y - start.y - 2*xxx.thickness));
+
     rect.setPosition(sf::Vector2f (start.x + xxx.thickness, start.y + xxx.thickness));
+
     rect.setFillColor(xxx.cur_fill_color);
     rect.setOutlineColor (xxx.cur_line_color);
     rect.setOutlineThickness (xxx.thickness);
+
     xxx.window.draw(rect);
 }
 
@@ -247,10 +258,13 @@ void draw_circle (Point start, double r, Color color, int line_thickness)
     }
 
     sf::CircleShape rect(r);
+
     rect.setPosition(sf::Vector2f (start.x - xxx.thickness - r, start.y - xxx.thickness - r));
+
     rect.setFillColor(xxx.cur_fill_color);
     rect.setOutlineColor (xxx.cur_line_color);
     rect.setOutlineThickness (xxx.thickness);
+
     xxx.window.draw(rect);
 }
 
@@ -307,7 +321,7 @@ void Text::render ()
     xxx.window.draw (str);
 }
 
-std::string Text::get_str ()
+std::string Text::get_str () const
 {
     return str.getString ();
 }
@@ -352,12 +366,12 @@ void Image::draw ()
     xxx.window.draw(drawable_image);
 }
 
-bool Image::exist ()
+bool Image::exist () const
 {
     return (drawable_image.getTexture ());
 }
 
-Point Image::get_size ()
+Point Image::get_size () const
 {
     return shown_size;
 }
@@ -367,13 +381,13 @@ void Image::update (ImageMemory &memory)
     full_image.update (memory.memory);
 }
 
-Point Image::get_cur_start ()
+Point Image::get_cur_start () const
 {
     return {static_cast<double>(drawable_image.getTextureRect ().left),
             static_cast<double>(drawable_image.getTextureRect ().top)};
 }
 
-Point Image::get_full_size ()
+Point Image::get_full_size () const
 {
     if (exist()) {
         return {static_cast<double>(image.getSize ().x),
@@ -382,7 +396,7 @@ Point Image::get_full_size ()
     return size;
 }
 
-Point Image::get_scale ()
+Point Image::get_scale () const
 {
     auto scale = drawable_image.getScale ();
     return {scale.x, scale.y};
@@ -398,12 +412,12 @@ const sf::Uint8* Image::data ()
     return image.getPixelsPtr ();
 }
 
-Point Image::get_pos ()
+Point Image::get_pos () const
 {
     return start;
 }
 
-bool Image::contains_point (Point pos)
+bool Image::contains_point (Point pos) const
 {
     return pos.x >= start.x && pos.x <= start.x + shown_size.x &&
            pos.y >= start.y && pos.y <= start.y + shown_size.y;
@@ -437,7 +451,7 @@ void Image::save_image (const std::string &name)
     };
 }
 
-Point Image::get_start() {
+Point Image::get_start() const {
     return start;
 }
 
@@ -481,7 +495,7 @@ Mouse_button_event::Mouse_button is_clicked ()
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Realisation of Class ImageMemory   //////////////////////////////////////////////////
+///////////////////////////////////////   Realisation of Class ImageMemory   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -529,21 +543,15 @@ void ImageMemory::set_pixel (int x, int y, Color color, int thickness)
         }
 }
 
-int ImageMemory::get_width ()
-{
-    return width;
-}
-
-int ImageMemory::get_height ()
-{
-    return height;
+Point ImageMemory::get_size() const {
+    return {static_cast<double>(width), static_cast<double>(height)};
 }
 
 void ImageMemory::set_with_image (Image* img) {
     memcpy ((sf::Uint8*) memory, img->data (), width*height*4);
 }
 
-Color ImageMemory::get_pixel (int x, int y)
+Color ImageMemory::get_pixel (int x, int y) const
 {
     return {memory[4 * (y * width + x) + 0],
             memory[4 * (y * width + x) + 1],

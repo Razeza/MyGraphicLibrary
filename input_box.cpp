@@ -3,6 +3,11 @@
 
 #include "input_box.hpp"
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Realisation of Class Input_box   //////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void Input_box::render ()
 {
     draw_circled_rectangle (settings.start, settings.size, settings.fill_color, settings.line_color, settings.thickness);
@@ -26,7 +31,7 @@ Input_box::Input_box (const std::string& str_question, std::string& ans, Input_b
     str_answer (ans),
     answer (),
     question (),
-    ok_button (Stop_input (), GRAY, settings.letters_box_size,
+    ok_button (Stop_input (), GRAY, {settings.letters_box_size.y, settings.letters_box_size.y},
                {(settings.size.x - 2*settings.thickness - settings.letters_box_size.x) / 2 + settings.start.x + settings.thickness + settings.letters_box_size.x + 30,
                2*(settings.size.y - 2*settings.letters_box_size.y)/3 + settings.letters_box_size.y + settings.start.y + settings.thickness},
                {100, 100, 100}, settings.letter_box_thickness)
