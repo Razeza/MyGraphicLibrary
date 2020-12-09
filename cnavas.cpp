@@ -208,6 +208,7 @@ void draw_line (Canvas& memory, Point last_pos, Point coordinates, Color color, 
     int height = end_y - begin_y;
 
 
+    auto [mem_width, mem_height] = memory.get_size ();
     if (width > height)
     {
         for (auto i = 0; i <= width && width != 0; i++)
@@ -215,11 +216,11 @@ void draw_line (Canvas& memory, Point last_pos, Point coordinates, Color color, 
             int j = 0;
             if ((coordinates.y >= last_pos.y && coordinates.x >= last_pos.x) || (coordinates.y <= last_pos.y && coordinates.x <= last_pos.x))
             {
-                j = memory.get_width () * (i * height / width + begin_y) + i + begin_x;
+                j = mem_width * (i * height / width + begin_y) + i + begin_x;
             }
             else
             {
-                j = memory.get_width () * ((width - i) * height / width + begin_y) + i + begin_x;
+                j = mem_width * ((width - i) * height / width + begin_y) + i + begin_x;
             }
             memory.set_pixel (j, color, thickness);
         }
@@ -231,11 +232,11 @@ void draw_line (Canvas& memory, Point last_pos, Point coordinates, Color color, 
             int j = 0;
             if ((coordinates.y >= last_pos.y && coordinates.x >= last_pos.x) || (coordinates.y <= last_pos.y && coordinates.x <= last_pos.x))
             {
-                j = memory.get_width () * (i + begin_y) + begin_x + width * i / height;
+                j = mem_width * (i + begin_y) + begin_x + width * i / height;
             }
             else
             {
-                j = memory.get_width () * (i + begin_y) + begin_x + width - width * i / height;
+                j = mem_width * (i + begin_y) + begin_x + width - width * i / height;
             }
             memory.set_pixel (j, color, thickness);
         }
@@ -417,10 +418,10 @@ void Canvas::hover ()
 
 Canvas::Canvas (int x_screen, int y_screen, const std::string &file_name):
     Image (file_name.c_str ()),
-    memory (get_size ().x, get_size ().y)
+    memory (Image::get_size ().x, Image::get_size ().y)
 {
-    set_pos ({static_cast<double>((x_screen - memory.get_width ())/2),
-              static_cast<double>((y_screen - memory.get_height ())/2)});
+    set_pos ({static_cast<double>((x_screen - memory.get_size ().x)/2),
+              static_cast<double>((y_screen - memory.get_size ().y)/2)});
     memory.set_with_image (this);
 }
 
@@ -447,15 +448,6 @@ void Canvas::operator() (int x, int y, Color color, int thickness)
     memory.set_pixel (x, y, color, thickness);
 }
 
-int Canvas::get_width ()
-{
-    return memory.get_width ();
-}
-
-int Canvas::get_height ()
-{
-    return memory.get_height ();
-}
 
 void Canvas::set_pixel (int i, Color color, int thickness)
 {
@@ -485,6 +477,10 @@ Point Canvas::get_coordinates(Point x_y) {
 
 uint8_t *Canvas::get_data() {
     return memory.get_data();
+}
+
+Point Canvas::get_canvas_size() const {
+    return memory.get_size ();
 }
 
 
@@ -563,24 +559,24 @@ bool Paint::process_event (Event* event)
                 auto new_pos = canvas.get_coordinates (pos);
 
                 if (mouse_event->action == Type_of_action::PRESSED && plugin_used == false) {
-                    cur_plugin->start_apply ({canvas.get_data(), static_cast<std::size_t>(canvas.get_height()),
-                                                                static_cast<std::size_t>(canvas.get_width())},
+                    cur_plugin->start_apply ({canvas.get_data(), static_cast<std::size_t>(canvas.get_size().y),
+                                                                static_cast<std::size_t>(canvas.get_size().x)},
                                                                {static_cast<int64_t> (new_pos.x),
                                                                 static_cast<int64_t> (new_pos.y)});
                     plugin_used = true;
                 }
 
                 if (mouse_event->action == Type_of_action::RELEASED && plugin_used == true) {
-                    cur_plugin->stop_apply ({canvas.get_data(), static_cast<std::size_t>(canvas.get_height()),
-                                                                static_cast<std::size_t>(canvas.get_width())},
+                    cur_plugin->stop_apply ({canvas.get_data(), static_cast<std::size_t>(canvas.get_size().y),
+                                                                static_cast<std::size_t>(canvas.get_size().x)},
                                                                {static_cast<int64_t> (new_pos.x),
                                                                 static_cast<int64_t> (new_pos.y)});
                     plugin_used = false;
                 }
 
                 if (mouse_event->action == Type_of_action::PRESSED && plugin_used == true) {
-                    cur_plugin->apply({canvas.get_data(), static_cast<std::size_t>(canvas.get_height()),
-                                                          static_cast<std::size_t>(canvas.get_width())},
+                    cur_plugin->apply({canvas.get_data(), static_cast<std::size_t>(canvas.get_size().y),
+                                                          static_cast<std::size_t>(canvas.get_size().x)},
                                                          {static_cast<int64_t> (new_pos.x),
                                                           static_cast<int64_t> (new_pos.y)});
                 }

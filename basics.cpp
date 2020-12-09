@@ -11,7 +11,7 @@ Color::Color (int init_red, int init_green, int init_blue, int init_alfa):
         alfa (init_alfa)
 { }
 
-bool Color::operator!= (Color another)
+bool Color::operator!= (const Color& another) const
 {
     return red   != another.red   ||
            green != another.green ||

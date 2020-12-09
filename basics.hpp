@@ -19,7 +19,8 @@ struct Point
     Point operator / (int div);
 };
 
-#define NO_COLOR {-2, -2, -2}
+
+
 struct Color
 {
     int red;
@@ -27,11 +28,14 @@ struct Color
     int blue;
     int alfa;
 
-    bool operator != (Color another);
+    bool operator != (const Color& another) const;
 
     Color () = default;
     Color (int init_red, int init_green, int init_blue, int init_alfa = 255);
 };
+
+uint32_t RGBA (uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+uint32_t RGBA (Color color);
 
 #define RED {255, 0, 0}
 #define PINK {255, 192, 203}
@@ -40,14 +44,14 @@ struct Color
 #define GREEN {0, 128, 0}
 #define DARK_GREEN {0, 100, 0}
 #define BLUE {0, 0, 255}
+#define NO_COLOR {-2, -2, -2}
 #define DARK_BLUE {0, 0, 139}
 #define PURPLE {128, 0, 128}
 #define WHITE {255, 255, 255}
 #define BLACK  {0, 0,0}
 #define GRAY {128, 128, 128}
 
-uint32_t RGBA (uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-uint32_t RGBA (Color color);
+
 
 
 

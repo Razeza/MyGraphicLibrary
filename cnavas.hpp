@@ -30,8 +30,7 @@ public:
 
     Color get_pixel (int x, int y);
 
-    int get_width ();
-    int get_height ();
+    Point get_canvas_size () const;
 
 
 

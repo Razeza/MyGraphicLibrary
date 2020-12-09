@@ -17,9 +17,9 @@ Palitra::Palitra (Palitra::Palitra_settings init_settings):
           settings.line_coordinates.y + settings.line_thickness,
           settings.line_size.x - 2*settings.line_thickness,
           settings.line_size.y - 2*settings.line_thickness),
-    cur_point ({square.get_pos ().x, square.get_pos ().y + square.get_height () - std::min (settings.line_thickness, 6)}),
+    cur_point ({square.get_pos ().x, square.get_pos ().y + square.get_size().y - std::min (settings.line_thickness, 6)}),
     slider (settings.line_coordinates + Point(settings.line_thickness, 0),
-            {5, settings.line_size.y}, line.get_width ())
+            {5, settings.line_size.y}, line.get_size().x)
 {
     set_line ();
     set_square ();
@@ -58,12 +58,13 @@ void Palitra::set_line ()
                            static_cast<int>(g * 255),
                            static_cast<int>(b * 255)};
 
-        for (std::size_t j = cur_x; j < cur_x + line.get_width () / 360; j++) {
-            for (int k = 0; k < line.get_height (); k++) {
+        auto [width, height] = line.get_size();
+        for (std::size_t j = cur_x; j < cur_x + width / 360; j++) {
+            for (int k = 0; k < height; k++) {
                 line.set_pixel (j, k, cur_color);
             }
         }
-        cur_x += (line.get_width () + 1) / 360;
+        cur_x += (width + 1) / 360;
     }
     line.update ();
 }
@@ -78,8 +79,7 @@ void Palitra::set_square ()
     float s = 1;
     float v = 1;
 
-    auto width = square.get_width ();
-    auto height = square.get_height ();
+    auto [width, height] = square.get_size();
 
     for (int x = 0; x < width; ++x) {
         for (int y = 0; y < width; ++y) {

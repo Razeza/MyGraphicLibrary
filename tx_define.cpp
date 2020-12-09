@@ -288,7 +288,7 @@ bool Image::exist () {
     return (image != NULL);
 }
 
-Point Image::get_size ()
+Point Image::get_size () const
 {
     return {width, height};
 }

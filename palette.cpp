@@ -69,8 +69,8 @@ void Palette::render ()
     palette.render ();
     int thickness = palette.get_line_thickness();
     draw_rectangle (cur_color.get_pos () - Point(thickness, thickness),
-                    {cur_color.get_pos ().x + cur_color.get_width () + thickness,
-                    cur_color.get_pos ().y + cur_color.get_height () + thickness},
+                    {cur_color.get_pos ().x + cur_color.get_size().x + thickness,
+                    cur_color.get_pos ().y + cur_color.get_size().y + thickness},
                     GRAY, thickness);
     cur_color.render ();
     text.render ();
