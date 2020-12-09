@@ -25,7 +25,7 @@ protected:
 
     Point real_size;
 
-    Point get_size ();
+    Point get_size () const;
 
 public:
     Background () = default;
@@ -35,7 +35,7 @@ public:
     Background (Color init_color, Point size, Point start, Point real_size, Color line_color = NO_COLOR, int thickness = 0);
 
     void change_coordinates (Point shift);
-    Point get_start ();
+    Point get_start () const;
 
     Image* get_image ();
 
@@ -58,7 +58,7 @@ public:
 class Hoverable
 {
 public:
-    virtual bool contains_point (Point mouse) = 0;
+    virtual bool contains_point (Point mouse) const = 0;
     virtual void hover () = 0;
     virtual ~Hoverable () {};
 };
@@ -70,7 +70,7 @@ public:
 class Clickable: public Hoverable
 {
 public:
-    virtual bool clicked (double mouse_x, double mouse_y) = 0;
+    virtual bool clicked (Point mouse) = 0;
     virtual ~Clickable () {};
 };
 
@@ -93,9 +93,9 @@ public:
     Button (Action action_init, const char* name, Point size, Point start = {0, 0}, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
     Button (Action action_init, Color color     , Point size, Point start = {0, 0}, Color line_color = NO_COLOR, int thickness = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
 
-    virtual bool contains_point (Point mouse) override;
+    virtual bool contains_point (Point mouse) const override;
     virtual void hover    () override;
-    virtual bool clicked  (double mouse_x, double mouse_y) override;
+    virtual bool clicked  (Point mouse) override;
     virtual void render   () override;
     virtual bool process_event (Event* event) override;
 
@@ -173,16 +173,11 @@ public:
             Point real_size);
 
 
-    virtual bool contains_point (Point mouse) override;
-
+    virtual bool contains_point (Point mouse) const override;
     virtual void hover    () override;
-
-    virtual bool clicked  (double mouse_x, double mouse_y) override;
-
+    virtual bool clicked  (Point mouse) override;
     virtual void render   () override;
-
     virtual bool process_event (Event* event) override;
-
     virtual ~Window ();
 };
 
@@ -232,7 +227,7 @@ private:
 
         Color color;
 
-        bool contains_point (Point mouse);
+        bool contains_point (Point mouse) const;
 
         Scroller (Point size, Point start, Color init_color);
 
@@ -262,20 +257,17 @@ public:
               const char* button_up, const char* button_down,
               Point init_real_size, Point shown_size, char kind, Color color = {160, 160, 160});
 
-    virtual bool contains_point (Point mouse) override;
+    virtual bool contains_point (Point mouse) const override;
+    virtual bool clicked        (Point mouse)       override;
 
-    virtual void hover () override;
-
-    virtual bool clicked (double mouse_x, double mouse_y) override;
-
+    virtual void hover  () override;
     virtual void render () override;
 
     virtual bool process_event (Event* event) override;
 
-    virtual ~Scrollbar ();
+    virtual ~Scrollbar () = default;
 
-    void up_down (double shift);
-
+    void up_down    (double shift);
     void right_left (double shift);
 };
 
@@ -286,9 +278,9 @@ enum bar
     X_Y_BAR = 2
 };
 
-void page_up (Scrollable* image, double shift);
-void page_left (Scrollable* image, double shift);
-void page_down (Scrollable* image, double shift);
+void page_up    (Scrollable* image, double shift);
+void page_left  (Scrollable* image, double shift);
+void page_down  (Scrollable* image, double shift);
 void page_right (Scrollable* image, double shift);
 
 class View_port: public Abstract_window {
@@ -318,6 +310,11 @@ private:
 
 
     bool pressed = false;
+
+
+    bool process_scroll_event (Event* event);
+    bool process_button_event (Event* event);
+    bool process_key_event    (Event* event);
 public:
 
 
@@ -328,71 +325,6 @@ public:
 
     View_port (Scrollable* image, Settings settings[2]);
 };
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Declaration of Class Window_with_scrollbar   //////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef ARTEFACT
-class Window_with_scrollbar: public Window
-{
-private:
-    Scrollbar bar[2];
-    char kind_of_bar;
-
-    double max_x;
-    double max_y;
-    double cur_x;
-    double cur_y;
-
-    bool pressed = false;
-
-public:
-
-    Window_with_scrollbar  (const char* name,
-                            double init_width,
-                            double init_height,
-                            double init_real_width,         // real size of image
-                            double init_real_height,        // real size of image
-                            double init_x,
-                            double init_y,
-                            Point image_size, Point image_start);
-
-    Window_with_scrollbar  (const char* name,
-                            double init_width,
-                            double init_height,
-                            double init_real_width,         // real size of image
-                            double init_real_height,        // real size of image
-                            double init_x,
-                            double init_y,
-                            double init_frame_width,
-                            double init_frame_height,
-                            double button_width,
-                            double bar_width,
-                            const char* button_up,
-                            const char* button_down,
-                            char  init_kind_of_bar,
-                            const char* button_left  = nullptr,
-                            const char* button_right = nullptr,
-                            Color bar_color = {160, 160, 160},
-                            double init_scroller_width = 0,
-                            double init_scroller_height = 0,
-                            Color init_scroller_color   = {255, 255, 255},
-                            Point image_size = {200, 200}, Point image_start = {0, 0});
-
-    virtual bool contains_point (Point mouse) override;
-
-    virtual void hover () override;
-
-    virtual bool clicked  (double mouse_x, double mouse_y) override;
-
-    virtual void render () override;
-
-    virtual bool process_event (Event* event) override;
-
-    virtual ~Window_with_scrollbar ();
-};
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Exit_functor   /////////////////////////////////////////////////

@@ -10,14 +10,18 @@
 #include <dlfcn.h>
 #include <memory>
 #include <cstdio>
+#include "helper.cpp"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Declaration of Class Canvas   /////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class Canvas: public Image, public Clickable, public Abstract_window {
 private:
     ImageMemory memory;
 public:
+    Canvas& operator= (Canvas&& new_canvas)  noexcept;
+
     Canvas (int x_screen, int y_screen, const std::string& file_name);
     Canvas (int init_x, int init_y, double width, double height);
 
@@ -28,22 +32,20 @@ public:
     void set_pixel (int i, Color color, int thickness = 1);
     void operator() (int i, Color color, int thickness = 1);
 
-    Color get_pixel (int x, int y);
+    Color get_pixel (int x, int y) const;
 
     Point get_canvas_size () const;
 
-
-
     void update ();
 
-    virtual bool contains_point (Point mouse) override;
-    virtual void hover () override;
+    virtual bool contains_point (Point mouse) const override;
+    virtual void hover  () override;
     virtual void render () override ;
     virtual bool process_event (Event* event) override;
-    virtual bool clicked (double mouse_x, double mouse_y) override ;
+    virtual bool clicked (Point mouse) override ;
     virtual ~Canvas () override;
 
-    Point get_coordinates (Point x_y);
+    Point get_coordinates (Point x_y) const;
 
     uint8_t* get_data ();
 
@@ -65,8 +67,8 @@ public:
     void set_thickness (int init_thickness);
     void set_color     (Color init_color);
 
-    int   get_thickness ();
-    Color get_color ();
+    int   get_thickness () const;
+    Color get_color () const;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,8 +80,8 @@ public:
 class ToolManager: public Abstract_window, public Clickable {
 private:
 
-    static const int number_of_tools = 8;
-    static const int number_of_buttons = 8;
+    static const int number_of_tools = 9;
+    static const int number_of_buttons = 9;
 
     Point tool_size = {32, 32};
     Point space = {10, 5};
@@ -101,7 +103,6 @@ private:
     const Canvas_event::tools& cur_tool;
     Text thickness_text;
 
-
     const int init_thickness = 11;
     const Color init_color = RED;
 public:
@@ -117,18 +118,16 @@ public:
 
     virtual void render ();
     virtual bool process_event (Event* event);
-    virtual bool contains_point (Point mouse) {return false;};
-    virtual void hover () {};
-    virtual bool clicked (double mouse_x, double mouse_y) {return false;};
+    virtual bool contains_point (Point mouse) const {return false;};
+    virtual void hover () { };
+    virtual bool clicked (Point mouse) {return false;};
     virtual ~ToolManager ();
 };
 
-
-
-
+PluginAPI::Plugin* load_plugin (const char* str);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Realisation of Class Abstract_tool   //////////////////////////////////////////
+///////////////////////////////////////   Declaration of Tool Classes   /////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -235,7 +234,7 @@ private:
 
     struct Save_action {
         void operator () () {
-            add_event (new Save_event());
+            add_event (new Canvas_event (Canvas_event::SAVE));
         }
     };
 public:
@@ -254,7 +253,7 @@ private:
 
     struct Trash_action {
         void operator () () {
-            add_event (new Trash_event());
+            add_event (new Canvas_event (Canvas_event::TRASH));
         }
     };
 public:
@@ -267,8 +266,30 @@ public:
     virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override {};
 };
 
+class Load_picture: Abstract_tool {
+    friend class ToolManager;
 
-class Paint: public Abstract_window // Rename фасад
+    struct Load_action {
+        void operator () () {
+            add_event (new Canvas_event (Canvas_event::LOAD));
+        }
+    };
+public:
+    Load_picture (Button<Load_action>* init_button);
+
+    Button<Load_action>* button;
+
+    virtual ~Load_picture () = default;
+
+    virtual void process (Canvas& img, Mouse_button_event* event, Color color, Point shift, int thickness) override {};
+};
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class Painter   ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class Painter: public Abstract_window // Rename фасад
 {
 private:
 
@@ -280,9 +301,16 @@ private:
 
     char plugin_used = false;
 
+    Point screen_size;
+
+    bool process_button_event       (Event* event);
+    bool process_change_color_event (Event* event);
+    bool process_thickness_event    (Event* event);
+    bool process_canvas_event       (Event* event);
+
 public:
-    Paint (int x_screen, int y_screen, const std::string& file_name, Palitra::Palitra_settings settings);
-    Paint (int init_x, int init_y, double width, double height, Palitra::Palitra_settings settings);
+    Painter (Point screen_size, const std::string& file_name, Palitra::Palitra_settings settings);
+    Painter (int init_x, int init_y, double width, double height, Palitra::Palitra_settings settings, Point screen_size);
 
     Canvas& get_canvas ();
     
@@ -290,7 +318,7 @@ public:
 
     virtual void render () override ;
     virtual bool process_event (Event* event) override;
-    virtual ~Paint () override;
+    virtual ~Painter () override;
 };
 
 

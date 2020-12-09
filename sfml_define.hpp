@@ -12,13 +12,13 @@
 
 enum keys
 {
-    PAGE_UP,
-    PAGE_DOWN,
-    ARROW_UP,
-    ARROW_DOWN,
-    ARROW_RIGHT,
-    ARROW_LEFT,
-    ENTER
+    PAGE_UP     = sf::Keyboard::PageUp,
+    PAGE_DOWN   = sf::Keyboard::PageDown,
+    ARROW_UP    = sf::Keyboard::Up,
+    ARROW_DOWN  = sf::Keyboard::Down,
+    ARROW_RIGHT = sf::Keyboard::Right,
+    ARROW_LEFT  = sf::Keyboard::Left,
+    ENTER       = sf::Keyboard::Enter
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,7 +165,7 @@ public:
 
     virtual ~Image () {};
 
-    Image (const char* name, Point size, Point start);
+    Image (const char* name, Point size = {0, 0}, Point start = {0, 0});
 
     const sf::Uint8* data ();
 private:
@@ -181,6 +181,7 @@ private:
     Point start;
 
 public:
+    Image& operator= (Image&& new_image) noexcept;
 
     void update    (ImageMemory& memory);
     void draw      ();
@@ -212,7 +213,7 @@ public:
 Image load_image (const char* name, Point size);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////   Declaration of Class ImageMemory   //////////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class ImageMemory   ////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -225,6 +226,8 @@ private:
     int height;
 
 public:
+    ImageMemory& operator= (ImageMemory&& new_mem) noexcept;
+
     ImageMemory (int init_width, int init_height);
     void set_pixel (int i, Color color, int thickness = 1);
     void operator() (int i, Color color, int thickness = 1);

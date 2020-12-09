@@ -1,19 +1,15 @@
-#define SFML
-#include "graphic_library.cpp"
-
-#include "cnavas.cpp"
-
+#include "app.cpp"
 
 double my_width  = 1920;
 double my_height = 1000;
 
+
 int main ()
 {
-    create_window ({my_width, my_height});
+
     Background back ({108, 122, 137, 255}, {my_width, my_height});
 
-    int canvas_width = 1200,
-        canvas_height = 700;
+
     Palitra::Palitra_settings settings = {
             .line_thickness = 5,
             .line_color = GRAY,
@@ -23,8 +19,7 @@ int main ()
             .line_size = {370 + 360, 60}
     };
 
-    //Paint x ((my_width - canvas_width)/2, (my_height - canvas_height)/2, canvas_width, canvas_height, settings);
-    Paint x (my_width, my_height, "graphic/back.bmp", settings);
+    Painter x ({my_width, my_height}, "graphic/back.bmp", settings);
     x.load_plugins({"ColorFilter"});
 
     View_port::Settings set1 = {
@@ -49,22 +44,12 @@ int main ()
             }
     };
 
-
-
-
     View_port::Settings set[] = {set1, set2};
     View_port view (&(x.get_canvas ()), set);
-    Window_manager try_ ({&back, &x, &view}, true);
+    Window_manager root_window ({&back, &x, &view}, true);
 
-    while (true)
-    {
-        if (Window_manager::CLOSE == try_.manage_windows ()) {
-            break;
-        }
-        try_.render ();
-
-        render_window ();
-    }
-
+    App::init({my_width, my_height});
+    App::set_root_window(&root_window);
+    App::run();
 }
 

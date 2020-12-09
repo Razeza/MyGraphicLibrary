@@ -2,6 +2,10 @@
 #include "cnavas.cpp"
 #include "color_utilities.cpp"
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Declaration of Class Palitra   ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class Palitra: public Abstract_window
 {
 public:
@@ -48,16 +52,20 @@ private:
 
     void set_line ();
     void set_square ();
+
+    bool process_button_event (Event* event);
+    bool process_hue_event    (Event* event);
 public:
     Palitra (Palitra_settings init_settings);
 
-    Color get_color ();
-    int get_line_thickness ();
+    Color get_color        () const;
+    int get_line_thickness () const;
 
-    bool contains_point (Point x_y);
-    virtual void render () override ;
+    bool contains_point (Point x_y) const;
+
+    virtual void render        () override ;
     virtual bool process_event (Event* event) override;
-    virtual ~Palitra () = default;
+    virtual ~Palitra           () = default;
 };
 
 

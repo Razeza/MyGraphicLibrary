@@ -14,7 +14,7 @@ class Event
 private:
     int type;
 public:
-    int get_type ();
+    int get_type () const;
 
     Event () = delete; // not to be used
 

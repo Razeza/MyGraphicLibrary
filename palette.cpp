@@ -3,13 +3,17 @@
 
 #include "palette.hpp"
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////   Realisation of Class Palette   ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 Palette::Palette (Button <Palette_action>* init_button, Palitra::Palitra_settings settings):
-        palette (settings),
+        palette   (settings),
         cur_color (settings.square_coordinates.x + settings.square_size.x + 50 + settings.line_thickness,
                    settings.square_coordinates.y + 50 + settings.line_thickness,
                    50, 50),
-        button (init_button),
-        text ()
+        button    (init_button),
+        text      ()
 {
     load_font ("graphic/font.ttf");
     text.set_font ();
@@ -22,7 +26,7 @@ Palette::Palette (Button <Palette_action>* init_button, Palitra::Palitra_setting
 
 bool Palette::process_event (Event* event)
 {
-    if (event->get_type () == OPEN_PALETTE) {
+    if (event->get_type () == CANVAS_EVENT && dynamic_cast<Canvas_event*> (event)->tool == Canvas_event::PALETTE) {
         open = true;
         return true;
     }
@@ -31,25 +35,22 @@ bool Palette::process_event (Event* event)
         return false;
     }
 
-    if (event->get_type () == BUTTON_CLICKED) {
-        auto mouse_event = dynamic_cast<Mouse_button_event*> (event);
-        if (contains_point (mouse_event->pos)) {
+    switch (event->get_type()) {
+        case BUTTON_CLICKED:
+        {
+            return process_mouse_event(event);
+        }
+
+        case HUE_CHANGED:
+        {
             return palette.process_event (event);
-        } else {
-            if (open) {
-                if (mouse_event->action == Type_of_action::RELEASED) {
-                    open ^= open;
-                }
-                return true;
-            }
+        }
+
+        default:
+        {
+            return false;
         }
     }
-
-    if (event->get_type () == HUE_CHANGED) {
-        return palette.process_event (event);
-    }
-
-    return false;
 }
 
 void Palette::render ()
@@ -81,10 +82,25 @@ Palitra* Palette::get_palette ()
     return &palette;
 }
 
-bool Palette::contains_point (Point pos)
+bool Palette::contains_point (Point pos) const
 {
     return pos.x >= start.x && pos.x <= start.x + size.x &&
            pos.y >= start.y && pos.y <= start.y + size.y;
+}
+
+bool Palette::process_mouse_event(Event *event) {
+    auto mouse_event = dynamic_cast<Mouse_button_event*> (event);
+    if (contains_point (mouse_event->pos)) {
+        return palette.process_event (event);
+    } else {
+        if (open) {
+            if (mouse_event->action == Type_of_action::RELEASED) {
+                open ^= open;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 #endif //GRAPH_LIB_PALETTE_HPP

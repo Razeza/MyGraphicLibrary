@@ -1,3 +1,7 @@
+#ifndef ENGINE
+    #define ENGINE
+
+
 #include "event.cpp"
 #include "basics.cpp"
 #include <cstring>
@@ -23,4 +27,6 @@
     #ifndef TX_LIB
         #error NO lib defined!
     #endif
+#endif
+
 #endif

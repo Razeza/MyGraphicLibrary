@@ -76,7 +76,7 @@ void init_key_pressed (const sf::Event& event, Type_of_action action) {
         }
         default:
         {
-            std::cout << "Unkown key";
+
         }
     }
 
@@ -334,12 +334,16 @@ std::string Text::get_str () const
 
 
 
-Image::Image (const char* name, Point _size = {0, 0}, Point start = {0, 0}):
+Image::Image (const char* name, Point _size, Point start):
     size (_size),
     start (start),
     shown_size (size)
 {
-    if (name == nullptr || !image.loadFromFile (name)) {
+    bool failed = false;
+    if (name != nullptr) {
+        failed =!image.loadFromFile (name);
+    }
+    if (name == nullptr || failed) {
         image.create (size.x, size.y, sf::Color::White);
     } else {
         image.loadFromFile(name);
@@ -453,6 +457,19 @@ void Image::save_image (const std::string &name)
 
 Point Image::get_start() const {
     return start;
+}
+
+Image &Image::operator=(Image &&new_image) noexcept {
+    image = new_image.image;
+    full_image = new_image.full_image;
+    drawable_image = sf::Sprite(full_image);
+
+    size = new_image.size;
+    shown_size = new_image.shown_size;
+    shift = new_image.shift;
+    start = new_image.start;
+
+    return *this;
 }
 
 
@@ -569,6 +586,15 @@ void ImageMemory::_memset (Color color)
 
 uint8_t *ImageMemory::get_data() {
     return memory;
+}
+
+ImageMemory &ImageMemory::operator=(ImageMemory &&new_mem) noexcept {
+    memory = new_mem.memory;
+    width = new_mem.width;
+    height = new_mem.height;
+
+    new_mem.memory = nullptr;
+    return *this;
 }
 
 

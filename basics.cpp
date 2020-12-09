@@ -41,11 +41,11 @@ Point::Point (double x, double y):
 { }
 
 uint32_t RGBA (uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    return a | (b << 8) | (g << 16) | (r << 24);
+    return r | (g << 8) | (b << 16) | (a << 24);
 }
 
 uint32_t RGBA (Color color) {
-    return color.alfa | (color.blue << 8) | (color.green << 16) | (color.red << 24);
+    return color.red | (color.green << 8) | (color.blue << 16) | (color.alfa << 24);
 }
 
 #endif
