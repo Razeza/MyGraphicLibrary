@@ -40,16 +40,16 @@ Color Abstract_tool::get_color ()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ToolManager::ToolManager (const Canvas_event::tools& init_tool, Palitra::Palitra_settings init_settings):
-        buttons {new Button<Pencil::Pencil_action> (Pencil::Pencil_action(), "graphic/pencil.bmp", tool_size.x, tool_size.y, space.x, space.y),
-                 new Button<Eraser::Eraser_action> (Eraser::Eraser_action(), "graphic/eraser.bmp", tool_size.x, tool_size.y, space.x*2 + tool_size.x, space.y),
+        buttons {new Button<Pencil::Pencil_action> (Pencil::Pencil_action(), "graphic/pencil.bmp", tool_size, space),
+                 new Button<Eraser::Eraser_action> (Eraser::Eraser_action(), "graphic/eraser.bmp", tool_size, {space.x*2 + tool_size.x, space.y}),
                  new Button<Change_thickness::Change_thickness_action> (Change_thickness::Change_thickness_action(Change_thickness::Change_thickness_action::UP),
-                                                                        "graphic/scroll-bar-arrow-up.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y),
+                                                                        "graphic/scroll-bar-arrow-up.bmp", tool_size/2, {space.x*3 + 2*tool_size.x, space.y}),
                  new Button<Change_thickness::Change_thickness_action> (Change_thickness::Change_thickness_action(Change_thickness::Change_thickness_action::DOWN),
-                                                                        "graphic/scroll-bar-arrow-down.bmp", tool_size.x/2, tool_size.y/2, space.x*3 + 2*tool_size.x, space.y + tool_size.y/2),
-                 new Button<Zoom::Zoom_action> (Zoom::Zoom_action (), "graphic/zoom.bmp", tool_size.x, tool_size.y, space.x*5 + tool_size.x*4, space.y),
-                 new Button<Palette::Palette_action> (Palette::Palette_action (), "graphic/palette.bmp", tool_size.x, tool_size.y, space.x*6 + tool_size.x*5, space.y),
-                 new Button<Trash::Trash_action> (Trash::Trash_action (), "graphic/trash.bmp", tool_size.x, tool_size.y, space.x*7 + tool_size.x*6, space.y),
-                 new Button<Save::Save_action> (Save::Save_action (), "graphic/save.bmp", tool_size.x, tool_size.y, space.x*8 + tool_size.x*7, space.y)},
+                                                                        "graphic/scroll-bar-arrow-down.bmp", tool_size/2, {space.x*3 + 2*tool_size.x, space.y + tool_size.y/2}),
+                 new Button<Zoom::Zoom_action> (Zoom::Zoom_action (), "graphic/zoom.bmp", tool_size, {space.x*5 + tool_size.x*4, space.y}),
+                 new Button<Palette::Palette_action> (Palette::Palette_action (), "graphic/palette.bmp", tool_size, {space.x*6 + tool_size.x*5, space.y}),
+                 new Button<Trash::Trash_action> (Trash::Trash_action (), "graphic/trash.bmp", tool_size, {space.x*7 + tool_size.x*6, space.y}),
+                 new Button<Save::Save_action> (Save::Save_action (), "graphic/save.bmp", tool_size, {space.x*8 + tool_size.x*7, space.y})},
         tools {new Pencil(dynamic_cast<Button<Pencil::Pencil_action>*> (buttons[0])),
                new Eraser(dynamic_cast<Button<Eraser::Eraser_action>*> (buttons[1])),
                new Change_thickness(dynamic_cast<Button<Change_thickness::Change_thickness_action>*> (buttons[2])),
@@ -88,14 +88,14 @@ ToolManager::~ToolManager ()
 
 void ToolManager::render ()
 {
-    draw_rectangle (start_point.x, start_point.y, tool_manager_size.x, tool_manager_size.y*2, manger_color, 0);
+    draw_rectangle (start_point, {tool_manager_size.x, tool_manager_size.y*2}, manger_color, 0);
 
 
     for (auto& i : buttons) {
         i->render ();
     }
 
-    draw_rectangle (space.x*3 + 2.5*tool_size.x, space.y, space.x*4 + 4*tool_size.x, space.y + tool_size.y, WHITE, 0);
+    draw_rectangle ({space.x*3 + 2.5*tool_size.x, space.y}, {space.x*4 + 4*tool_size.x, space.y + tool_size.y}, WHITE, 0);
 
     if (cur_tool != Canvas_event::NO_TOOL && cur_tool != Canvas_event::ZOOM &&
         cur_tool != Canvas_event::THICKNESS && cur_tool != Canvas_event::SHOW_THICKNESS)

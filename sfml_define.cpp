@@ -156,9 +156,9 @@ bool empty_queue ()
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////   Realisation of Window Functions   //////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void create_window (double size_x, double size_y)
+void create_window (Point size)
 {
-    xxx.window.create (sf::VideoMode(size_x, size_y), "App");
+    xxx.window.create (sf::VideoMode(size.x, size.y), "App");
 }
 
 void render_window ()
@@ -209,52 +209,37 @@ void set_line_and_fill_color (Color color, int line_thickness)
 
 
 
-void draw_line (double x0, double y0, double x1, double y1, Color color, int line_thickness)
+void draw_line (Point start, Point end, Color color, int line_thickness)
 {
     if (color.red != -1)
     {
         set_line_color (color, line_thickness);
     }
 
-    sf::RectangleShape line (sf::Vector2f(x1 - x0, y1 - y0));
+    sf::RectangleShape line (sf::Vector2f(end.x - start.x, end.y - start.y));
     line.setFillColor (xxx.cur_fill_color);
-    line.move (x0, y0);
-    line.rotate (atan ((x1 - x0) / (y1 - y0)));
+    line.move (start.x, start.y);
+    line.rotate (atan ((end.x - start.x) / (end.y - start.y)));
     xxx.window.draw (line);
 }
 
-void draw_rectangle (double x0, double y0, double x1, double y1, Color color, int line_thickness)
+void draw_rectangle (Point start, Point end, Color color, int line_thickness)
 {
     if (color.red != -1)
     {
         set_line_and_fill_color (color, line_thickness);
     }
 
-    sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(x1 - x0 - 2*xxx.thickness, y1 - y0 - 2*xxx.thickness));
-    rect.setPosition(sf::Vector2f (x0 + xxx.thickness, y0 + xxx.thickness));
+    sf::RectangleShape rect = sf::RectangleShape(sf::Vector2f(end.x - start.x - 2*xxx.thickness, end.y - start.y - 2*xxx.thickness));
+    rect.setPosition(sf::Vector2f (start.x + xxx.thickness, start.y + xxx.thickness));
     rect.setFillColor(xxx.cur_fill_color);
     rect.setOutlineColor (xxx.cur_line_color);
     rect.setOutlineThickness (xxx.thickness);
     xxx.window.draw(rect);
 }
 
-void draw_triangle (double x0, double y0, double x1, double y1, double x2, double y2, Color color, int line_thickness) // fix accurancy
-{
-    if (color.red != -1)
-    {
-        set_line_and_fill_color (color, line_thickness);
-    }
 
-    double side_size = sqrt ((x1 - x0 - 2*line_thickness)*(x1- x0 - 2*line_thickness) + (y1 - y0 - 2*line_thickness)*(y1 - y0 - 2*line_thickness));
-    sf::CircleShape rect(side_size, 3);
-    rect.setPosition(sf::Vector2f (x0 + xxx.thickness, y0 + xxx.thickness));
-    rect.setFillColor(xxx.cur_fill_color);
-    rect.setOutlineColor (xxx.cur_line_color);
-    rect.setOutlineThickness (xxx.thickness);
-    xxx.window.draw(rect);
-}
-
-void draw_circle (double x0, double y0, double r, Color color, int line_thickness)
+void draw_circle (Point start, double r, Color color, int line_thickness)
 {
     if (color.red != -1)
     {
@@ -262,7 +247,7 @@ void draw_circle (double x0, double y0, double r, Color color, int line_thicknes
     }
 
     sf::CircleShape rect(r);
-    rect.setPosition(sf::Vector2f (x0 - xxx.thickness - r, y0 - xxx.thickness - r));
+    rect.setPosition(sf::Vector2f (start.x - xxx.thickness - r, start.y - xxx.thickness - r));
     rect.setFillColor(xxx.cur_fill_color);
     rect.setOutlineColor (xxx.cur_line_color);
     rect.setOutlineThickness (xxx.thickness);
@@ -335,26 +320,24 @@ std::string Text::get_str ()
 
 
 
-Image::Image (const char* name, Point size = {0, 0}, Point start = {0, 0}):
-    width (size.x),
-    height (size.y),
-    x (start.x),
-    y (start.y),
-    shown_width (width),
-    shown_height (height)
+Image::Image (const char* name, Point _size = {0, 0}, Point start = {0, 0}):
+    size (_size),
+    start (start),
+    shown_size (size)
 {
     if (name == nullptr || !image.loadFromFile (name)) {
-        image.create (width, height, sf::Color::White);
+        image.create (size.x, size.y, sf::Color::White);
+    } else {
+        image.loadFromFile(name);
     }
 
 
-    if (height == 0) {
-        auto size = image.getSize ();
-        width = size.x;
-        height = size.y;
+    if (size.y == 0) {
+        auto real_size = image.getSize ();
+        size.x = real_size.x;
+        size.y = real_size.y;
 
-        shown_width = size.x;
-        shown_height = size.y;
+        shown_size = size;
     }
 
     full_image.loadFromImage (image);
@@ -364,8 +347,8 @@ Image::Image (const char* name, Point size = {0, 0}, Point start = {0, 0}):
 
 void Image::draw ()
 {
-    drawable_image.setPosition (x, y);
-    drawable_image.setTextureRect ({static_cast<int>(x_shift), static_cast<int>(y_shift), static_cast<int>(width), static_cast<int>(height)});
+    drawable_image.setPosition (start.x, start.y);
+    drawable_image.setTextureRect ({static_cast<int>(shift.x), static_cast<int>(shift.y), static_cast<int>(size.x), static_cast<int>(size.y)});
     xxx.window.draw(drawable_image);
 }
 
@@ -376,7 +359,7 @@ bool Image::exist ()
 
 Point Image::get_size ()
 {
-    return {shown_width, shown_height};
+    return shown_size;
 }
 
 void Image::update (ImageMemory &memory)
@@ -392,8 +375,11 @@ Point Image::get_cur_start ()
 
 Point Image::get_full_size ()
 {
-    return {static_cast<double>(image.getSize ().x),
-            static_cast<double>(image.getSize ().y)};;
+    if (exist()) {
+        return {static_cast<double>(image.getSize ().x),
+                static_cast<double>(image.getSize ().y)};
+    }
+    return size;
 }
 
 Point Image::get_scale ()
@@ -404,8 +390,7 @@ Point Image::get_scale ()
 
 void Image::set_pos (Point pos)
 {
-    x  = pos.x;
-    y  = pos.y;
+    start = pos;
 }
 
 const sf::Uint8* Image::data ()
@@ -415,13 +400,13 @@ const sf::Uint8* Image::data ()
 
 Point Image::get_pos ()
 {
-    return {x, y};
+    return start;
 }
 
 bool Image::contains_point (Point pos)
 {
-    return pos.x >= x && pos.x <= x + shown_width &&
-            pos.y >= y && pos.y <= y + shown_height;
+    return pos.x >= start.x && pos.x <= start.x + shown_size.x &&
+           pos.y >= start.y && pos.y <= start.y + shown_size.y;
 }
 
 void Image::set_scale (Point scale)
@@ -429,22 +414,19 @@ void Image::set_scale (Point scale)
     drawable_image.scale (scale.x, scale.y);
 }
 
-void Image::shift_coordinates (Point shift)
+void Image::shift_coordinates (Point plus_shift)
 {
-    x_shift += shift.x;
-    y_shift += shift.y;
+    shift = shift + plus_shift;
 }
 
 void Image::set_shift (Point change)
 {
-    x_shift = change.x;
-    y_shift = change.y;
+    shift = change;
 }
 
 void Image::change_size (Point new_size)
 {
-    width = new_size.x;
-    height = new_size.y;
+    size = new_size;
 }
 
 void Image::save_image (const std::string &name)
@@ -453,6 +435,10 @@ void Image::save_image (const std::string &name)
     if (!image.saveToFile (name)) {
         printf ("save is failed");
     };
+}
+
+Point Image::get_start() {
+    return start;
 }
 
 

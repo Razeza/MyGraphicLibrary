@@ -19,31 +19,23 @@ private:
     Color color;
 
 protected:
-    double x;
-    double y;
-
-    double x_shift = 0;
-    double y_shift = 0;
-
-    double width;
-    double height;
 
     int thickness;
     Color line_color;
 
-    double real_width;
-    double real_height;
+    Point real_size;
 
     Point get_size ();
 
 public:
     Background () = default;
-    Background (const char* name, double init_width, double init_height, double init_x = 0, double init_y = 0);
-    Background (Color init_color, double init_width, double init_height, double init_x = 0, double init_y = 0, Color line_color = NO_COLOR, int thickness = 0);
-    Background (const char* name, double init_width, double init_height, double init_x, double init_y, double init_real_width, double init_real_height);
-    Background (Color init_color, double init_width, double init_height, double init_x, double init_y, double init_real_width, double init_real_height, Color line_color = NO_COLOR, int thickness = 0);
+    Background (const char* name, Point size, Point start = {0, 0});
+    Background (Color init_color, Point size, Point start = {0, 0}, Color line_color = NO_COLOR, int thickness = 0);
+    Background (const char* name, Point size, Point start, Point real_size);
+    Background (Color init_color, Point size, Point start, Point real_size, Color line_color = NO_COLOR, int thickness = 0);
 
     void change_coordinates (Point shift);
+    Point get_start ();
 
     Image* get_image ();
 
@@ -98,8 +90,8 @@ public:
 
     Button() = default;
 
-    Button (Action action_init, const char* name, double init_width, double init_height, double x_init = 0, double y_init = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
-    Button (Action action_init, Color color     , double init_width, double init_height, double x_init, double y_init, Color line_color = NO_COLOR, int thickness = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
+    Button (Action action_init, const char* name, Point size, Point start = {0, 0}, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
+    Button (Action action_init, Color color     , Point size, Point start = {0, 0}, Color line_color = NO_COLOR, int thickness = 0, Mouse_button_event::Mouse_button init_button = Mouse_button_event::LEFT_BUTTON);
 
     virtual bool contains_point (Point mouse) override;
     virtual void hover    () override;
@@ -155,39 +147,30 @@ private:
     Button<Close_functor> close_window;
 
 protected:
-    double width;
-    double height;
-    double x;
-    double y;
 
-    double frame_width;
-    double frame_height;
+
+    Point window_size;
+    Point window_start;
+    Point frame_size;
 
 
 
 public:
     Window (const char* name,
-            double init_width,
-            double init_height,
-            double init_x,
-            double init_y,
-            double init_frame_width,
-            double init_frame_height,
+            Point window_size,
+            Point window_start,
+            Point frame_size,
             double button_width,
-            double init_real_width,
-            double init_real_height,
-            Point image_size, Point image_start);
+            Point real_size,
+            Point image_size,
+            Point image_start);
 
     Window (Color color,
-            double init_width,
-            double init_height,
-            double init_x,
-            double init_y,
-            double init_frame_width,
-            double init_frame_height,
+            Point window_size,
+            Point window_start,
+            Point frame_size,
             double button_width,
-            double init_real_width,
-            double init_real_height);
+            Point real_size);
 
 
     virtual bool contains_point (Point mouse) override;
@@ -231,10 +214,8 @@ public:
 class Scrollbar: public Abstract_window, public Clickable
 {
 private:
-    double x;
-    double y;
-    double width;
-    double height;
+    Point start;
+    Point size;
 
     char what;
 
@@ -245,19 +226,15 @@ private:
 
     struct Scroller: Abstract_window
     {
-        double cur_x;
-        double cur_y;
-
-        double x;
-        double y;
-        double width;
-        double height;
+        Point cur_place;
+        Point start;
+        Point size;
 
         Color color;
 
         bool contains_point (Point mouse);
 
-        Scroller (double init_width, double init_height, double init_x, double init_y, Color init_color);
+        Scroller (Point size, Point start, Color init_color);
 
         virtual void render ();
 
@@ -280,9 +257,10 @@ public:
 
     Scrollbar() = default;
 
-    Scrollbar(double init_x, double init_y, double init_width, double init_height,
-              double init_scroller_width, double init_scroller_height, Color init_scroller_color,
-              const char* button_up, const char* button_down, Point init_real_size, Point shown_size, char kind, Color color = {160, 160, 160});
+    Scrollbar(Point start, Point size, Point scroller_size,
+              Color init_scroller_color,
+              const char* button_up, const char* button_down,
+              Point init_real_size, Point shown_size, char kind, Color color = {160, 160, 160});
 
     virtual bool contains_point (Point mouse) override;
 

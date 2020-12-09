@@ -7,12 +7,12 @@ void Input_box::render ()
 {
     draw_circled_rectangle (settings.start, settings.size, settings.fill_color, settings.line_color, settings.thickness);
 
-    auto [x, y] = settings.start + Point(settings.thickness, settings.thickness) + (settings.size - settings.letters_box_size) / 2;
-    y = 2*(settings.size.y - 2*settings.letters_box_size.y)/3 + settings.letters_box_size.y + settings.start.y + settings.thickness;
+    Point start = settings.start + Point(settings.thickness, settings.thickness) + (settings.size - settings.letters_box_size) / 2;
+    start.y = 2*(settings.size.y - 2*settings.letters_box_size.y)/3 + settings.letters_box_size.y + settings.start.y + settings.thickness;
 
     set_fill_color ({240, 240, 240});
     set_line_color (GRAY, settings.letter_box_thickness);
-    draw_rectangle (x, y, x + settings.letters_box_size.x, y + settings.letters_box_size.y);
+    draw_rectangle (start, start + settings.letters_box_size);
 
     answer.render ();
     question.render ();
@@ -26,9 +26,9 @@ Input_box::Input_box (const std::string& str_question, std::string& ans, Input_b
     str_answer (ans),
     answer (),
     question (),
-    ok_button (Stop_input (), GRAY, settings.letters_box_size.y, settings.letters_box_size.y,
-               (settings.size.x - 2*settings.thickness - settings.letters_box_size.x) / 2 + settings.start.x + settings.thickness + settings.letters_box_size.x + 30,
-               2*(settings.size.y - 2*settings.letters_box_size.y)/3 + settings.letters_box_size.y + settings.start.y + settings.thickness,
+    ok_button (Stop_input (), GRAY, settings.letters_box_size,
+               {(settings.size.x - 2*settings.thickness - settings.letters_box_size.x) / 2 + settings.start.x + settings.thickness + settings.letters_box_size.x + 30,
+               2*(settings.size.y - 2*settings.letters_box_size.y)/3 + settings.letters_box_size.y + settings.start.y + settings.thickness},
                {100, 100, 100}, settings.letter_box_thickness)
 {
     load_font ("graphic/font.ttf");

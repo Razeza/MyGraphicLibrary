@@ -4,16 +4,16 @@
 #include "cnavas.cpp"
 
 
-double my_width  = GetSystemMetrics(SM_CXSCREEN);
-double my_height = GetSystemMetrics(SM_CYSCREEN);
+double my_width  = 1920;
+double my_height = 1080;
 
 int main ()
 {
-    create_window (my_width, my_height);
-    Background back ({127, 35, 85}, my_width, my_height);
+    create_window ({my_width, my_height});
+    Background back ({127, 35, 85}, {my_width, my_height});
     // Window_with_scrollbar x ("my_love.bmp", 1000, 700, 2560, 1820, 100, 100 , {700, 400}, {200, 200});
 
-    Image img ("my_love.bmp", 500, 500);
+    Image img ("my_love.bmp", {500, 500});
     // x.set_color (RED);
 
     View_port::Settings set1 = {
@@ -48,7 +48,7 @@ int main ()
             break;
         }
         try_.render ();
-        img.draw (100, 100);
+        img.draw ();
         render_window ();
     }
 }

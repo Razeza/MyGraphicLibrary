@@ -59,7 +59,7 @@ void Palette::render ()
     }
 
 
-    draw_rectangle (start.x, start.y, size.x, size.y, {153, 153, 255});
+    draw_rectangle (start, size, {153, 153, 255});
     if (cur_color.get_pixel (0, 0) != palette.get_color ()) {
         cur_color.memset (palette.get_color ());
 
@@ -68,10 +68,9 @@ void Palette::render ()
 
     palette.render ();
     int thickness = palette.get_line_thickness();
-    draw_rectangle (cur_color.get_pos ().x - thickness,
-                    cur_color.get_pos ().y - thickness,
-                    cur_color.get_pos ().x + cur_color.get_width () + thickness,
-                    cur_color.get_pos ().y + cur_color.get_height () + thickness,
+    draw_rectangle (cur_color.get_pos () - Point(thickness, thickness),
+                    {cur_color.get_pos ().x + cur_color.get_width () + thickness,
+                    cur_color.get_pos ().y + cur_color.get_height () + thickness},
                     GRAY, thickness);
     cur_color.render ();
     text.render ();

@@ -8,6 +8,7 @@
 
 struct Point
 {
+    Point () = default;
     Point (double x, double y);
 
     double x;

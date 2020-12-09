@@ -46,16 +46,15 @@ private:
     friend void store_events  ();
     friend void set_fill_color(Color color);
     friend void set_line_color(Color color, int line_thickness);
-    friend void create_window (double      size_x, double size_y);
+    friend void create_window (Point size);
     friend void render_window ();
     friend bool load_font     (const char* name);
     friend void add_event     (Event* new_event);
     friend Event* get_event   ();
     friend bool empty_queue   ();
-    friend void draw_line               (double x0, double y0, double x1, double y1, Color color, int line_thickness);
-    friend void draw_rectangle          (double x0, double y0, double x1, double y1, Color color, int line_thickness);
-    friend void draw_triangle           (double x0, double y0, double x1, double y1, double x2, double y2, Color color, int line_thickness);
-    friend void draw_circle             (double x0, double y0, double r,  Color color, int line_thickness);
+    friend void draw_line               (Point start, Point end, Color color, int line_thickness);
+    friend void draw_rectangle          (Point start, Point end, Color color, int line_thickness);
+    friend void draw_circle             (Point start, double r,  Color color, int line_thickness);
     friend Point get_mouse_coordinates  ();
     friend class Image;
     friend class Text;
@@ -96,10 +95,9 @@ void set_line_color          (Color color, int line_thickness = 10);
 void set_fill_color          (Color color);
 void set_line_and_fill_color (Color color, int line_thickness = 10);
 
-void draw_line               (double x0, double y0, double x1, double y1,                       Color color = {-1, -1, -1}, int line_thickness = 10);
-void draw_rectangle          (double x0, double y0, double x1, double y1,                       Color color = {-1, -1, -1}, int line_thickness = 10);
-void draw_triangle           (double x0, double y0, double x1, double y1, double x2, double y2, Color color = {-1, -1, -1}, int line_thickness = 10);
-void draw_circle             (double x0, double y0, double r,                                   Color color = {-1, -1, -1}, int line_thickness = 10);
+void draw_line               (Point start, Point end, Color color = {-1, -1, -1}, int line_thickness = 10);
+void draw_rectangle          (Point start, Point end, Color color = {-1, -1, -1}, int line_thickness = 10);
+void draw_circle             (Point start, double r,  Color color = {-1, -1, -1}, int line_thickness = 10);
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -169,17 +167,12 @@ private:
     sf::Image image;
     sf::Texture full_image;
     sf::Sprite drawable_image;
-    double width;
-    double height;
 
-    double shown_width;
-    double shown_height;
+    Point size;
+    Point shown_size;
+    Point shift = {0, 0};
 
-    double x_shift = 0;
-    double y_shift = 0;
-
-    double x;
-    double y;
+    Point start;
 
 public:
 
@@ -192,6 +185,8 @@ public:
     virtual Point get_size () final;
     virtual Point get_full_size () final;
     virtual Point get_cur_start  () final;
+
+    Point get_start ();
 
     Point get_pos ();
 

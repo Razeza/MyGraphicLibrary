@@ -28,17 +28,14 @@ Palitra::Palitra (Palitra::Palitra_settings init_settings):
 void Palitra::render ()
 {
     set_line_color (settings.line_color, settings.line_thickness);
-    draw_rectangle (settings.square_coordinates.x, settings.square_coordinates.y,
-                    settings.square_coordinates.x + settings.square_size.x,
-                    settings.square_coordinates.y + settings.square_size.y);
-    draw_rectangle (settings.line_coordinates.x, settings.line_coordinates.y,
-                    settings.line_coordinates.x + settings.line_size.x,
-                    settings.line_coordinates.y + settings.line_size.y);
+    draw_rectangle (settings.square_coordinates, settings.square_coordinates + settings.square_size);
+    draw_rectangle (settings.line_coordinates, settings.line_coordinates + settings.line_size);
+
     square.draw ();
     line.draw ();
     set_line_color (settings.line_color, 2);
     set_fill_color (NO_COLOR);
-    draw_circle (cur_point.x - std::min (settings.line_thickness, 6)/2, cur_point.y - std::min (settings.line_thickness, 6)/2, std::min (settings.line_thickness, 6));
+    draw_circle ({cur_point.x - std::min (settings.line_thickness, 6)/2, cur_point.y - std::min (settings.line_thickness, 6)/2}, std::min (settings.line_thickness, 6));
     slider.render ();
 }
 
@@ -150,8 +147,8 @@ void Palitra::Hue_slider::render ()
 {
     set_fill_color (color);
     set_line_color (line_color, thickness);
-    draw_rectangle (cur_pos.x, start.y,
-                    cur_pos.x + size.x + thickness, start.y + size.y);
+    draw_rectangle ({cur_pos.x, start.y},
+                    {cur_pos.x + size.x + thickness, start.y + size.y});
 }
 
 bool Palitra::Hue_slider::process_event (Event* event)

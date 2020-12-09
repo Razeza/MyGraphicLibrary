@@ -5,12 +5,12 @@
 
 
 double my_width  = 1920;
-double my_height = 1080;
+double my_height = 1000;
 
 int main ()
 {
-    create_window (my_width, my_height);
-    Background back ({108, 122, 137, 255}, my_width, my_height);
+    create_window ({my_width, my_height});
+    Background back ({108, 122, 137, 255}, {my_width, my_height});
 
     int canvas_width = 1200,
         canvas_height = 700;
